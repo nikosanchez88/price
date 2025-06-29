@@ -1,0 +1,247 @@
+:root {
+  --primary-color: #2d2d2d;
+  --secondary-color: #6b7280;
+  --accent-color: #5A67D8;
+  --bg-color: #fdfdfd;
+  --card-bg: #ffffff;
+  --table-header-bg: #f5f7fa;
+  --border-color: #e2e8f0;
+  --font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--primary-color);
+}
+
+.container {
+  max-width: 800px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: var(--card-bg);
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.03);
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  margin-bottom: 0.3rem;
+}
+
+.updated-time {
+  font-size: 0.9rem;
+  color: var(--secondary-color);
+  margin-bottom: 2rem;
+}
+
+.footer-text {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--secondary-color);
+  margin-top: 2rem;
+  letter-spacing: 0.2px;
+}
+
+.rates {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--table-header-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  margin-bottom: 2.5rem;
+}
+
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.currency-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.3rem;
+  margin-bottom: 1rem;
+}
+
+.currency-toggle button {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--border-color);
+  background: white;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  color: var(--primary-color);
+}
+
+.currency-toggle button.active {
+  background-color: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.currency-toggle button:hover {
+  transform: scale(1.02);
+  background-color: #ebedfa;
+}
+
+.currency-toggle button:active {
+  transform: scale(0.98);
+}
+
+input[type="number"] {
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  width: 100%;
+  margin-top: 0.5rem;
+  -moz-appearance: textfield;
+  background: #ffffff;
+  color: var(--primary-color);
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.exchange-text {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--secondary-color);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+colgroup col {
+  width: 33.333%;
+}
+
+th, td {
+  padding: 0.85rem;
+  font-size: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+th {
+  background-color: var(--table-header-bg);
+  color: var(--secondary-color);
+  font-weight: 600;
+  text-align: center;
+}
+
+td {
+  text-align: center;
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.col-strategy {
+  width: 33%;
+  text-align: left;
+}
+
+.col-clp, .col-rmb {
+  width: 33%;
+  text-align: right;
+}
+
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -1rem;
+  padding: 0 1rem;
+}
+
+/* 刷新按钮 */
+.rates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.refresh-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+  border-radius: 50%;
+  transition: transform 0.2s ease-in-out;
+  font-size: 1.5rem;
+  color: var(--accent-color);
+}
+
+.refresh-btn:hover {
+  transform: scale(1.2);
+  background-color: rgba(90, 103, 216, 0.1);
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 错误提示 */
+.error-message {
+  color: #ef4444;
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* 移动端优化 */
+@media (max-width: 600px) {
+  .container {
+    margin: 0;
+    padding: 1rem;
+    border-radius: 0;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .rates {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+  }
+
+  .table-container {
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  table {
+    font-size: 0.9rem;
+  }
+
+  th, td {
+    padding: 0.5rem;
+  }
+
+  .currency-toggle button {
+    padding: 0.5rem 1rem;
+  }
+
+  .section {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

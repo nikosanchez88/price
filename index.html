@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>实时汇率定价工具</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>实时汇率 & 定价工具</h1>
+    <div class="updated-time">🕓 正在获取汇率...</div>
+
+    <div class="section rates">
+      <div class="rates-header">
+        <span>实时汇率</span>
+        <button class="refresh-btn" id="refreshBtn" title="点击刷新汇率">
+          <span class="material-symbols-outlined">refresh</span>
+        </button>
+      </div>
+      <div class="rates-content"></div>
+    </div>
+
+    <div class="section">
+      <label>选择成本币种：</label>
+      <div class="currency-toggle">
+        <button class="active">RMB</button>
+        <button>CLP</button>
+      </div>
+      <div>
+        <label>输入成本价格：</label>
+        <input type="number" placeholder="请输入成本价格..." />
+        <div class="exchange-text">
+          当前换算：1 RMB ≈ —— CLP
+        </div>
+      </div>
+    </div>
+
+    <div class="section table-container">
+      <table>
+        <colgroup>
+          <col class="col-strategy" />
+          <col class="col-clp" />
+          <col class="col-rmb" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>策略</th>
+            <th>价格 (CLP)</th>            
+            <th>价格 (RMB)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>成本 × 2</td><td>——</td><td>——</td></tr>
+          <tr><td>+20% 毛利</td><td>——</td><td>——</td></tr>
+          <tr><td>+30% 毛利</td><td>——</td><td>——</td></tr>
+          <tr><td>+40% 毛利</td><td>——</td><td>——</td></tr>
+          <tr><td>+50% 毛利</td><td>——</td><td>——</td></tr>
+          <tr><td>+60% 毛利</td><td>——</td><td>——</td></tr>
+          <tr><td>+70% 毛利</td><td>——</td><td>——</td></tr>
+          <tr><td>+80% 毛利</td><td>——</td><td>——</td></tr>
+          <tr><td>+90% 毛利</td><td>——</td><td>——</td></tr>
+          <tr><td>+100% 毛利</td><td>——</td><td>——</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer-text">
+      数据来源：exchangerate.host | Designed for personal use
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

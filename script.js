@@ -13,13 +13,12 @@ const MAX_RETRIES = 3;
 const input = document.querySelector('input[type="number"]');
 const currencyButtons = document.querySelectorAll('.currency-toggle button');
 const exchangeText = document.querySelector('.exchange-text');
-const rateDisplay = document.querySelector('.rates-content');
 const refreshBtn = document.getElementById('refreshBtn');
+const priceRows = document.querySelector('tbody');
 
-// 添加刷新按钮事件监听
 refreshBtn.addEventListener('click', () => {
   refreshBtn.classList.add('loading');
-  refreshBtn.disabled = true; // 禁用按钮防止连点
+  refreshBtn.disabled = true;
   fetchRates();
 });
 
@@ -34,8 +33,6 @@ async function fetchRates() {
   try {
     const res = await fetch('https://v6.exchangerate-api.com/v6/ababb17c269414725464ed07/latest/USD');
     const data = await res.json();
-
-    console.log('API 返回数据：', data);
 
     if (data.result !== 'success') {
       throw new Error('API 返回错误：' + (data['error-type'] || '未知错误'));
@@ -62,21 +59,23 @@ async function fetchRates() {
   }
 }
 
-
 function showError(message) {
   const errorDiv = document.createElement('div');
   errorDiv.className = 'error-message';
   errorDiv.textContent = message;
-  rateDisplay.parentElement.insertBefore(errorDiv, rateDisplay);
+  document.querySelector('.updated-time')?.insertAdjacentElement('beforebegin', errorDiv);
   setTimeout(() => errorDiv.remove(), 5000);
 }
 
 function updateRateDisplay() {
-  rateDisplay.innerHTML = `
-    <div>💵 USD → CLP: <strong>${formatNumber(rateInfo.clp)}</strong></div>
-    <div>💵 USD → RMB: <strong>${formatNumber(rateInfo.cny)}</strong></div>
-    <div>💵 CNY → CLP: <strong>${formatNumber(rateInfo.cnyToClp)}</strong></div>
-  `;
+  const usdToClp = document.getElementById('usd-clp');
+  const usdToRmb = document.getElementById('usd-rmb');
+  const cnyToClp = document.getElementById('cny-clp');
+
+  if (usdToClp) usdToClp.textContent = formatNumber(rateInfo.clp);
+  if (usdToRmb) usdToRmb.textContent = formatNumber(rateInfo.cny);
+  if (cnyToClp) cnyToClp.textContent = formatNumber(rateInfo.cnyToClp);
+
   updateConversionText();
 }
 
@@ -121,8 +120,8 @@ input.addEventListener('input', () => {
 
 function updateTable(cost) {
   const margins = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
-
   priceRows.innerHTML = '';
+  addCostRow('成本（输入值）', cost);
   addTableRow('成本 × 2', cost * 2);
 
   margins.forEach(margin => {
@@ -130,6 +129,26 @@ function updateTable(cost) {
     const price = cost * (1 + margin);
     addTableRow(label, price);
   });
+}
+
+function addCostRow(label, cost) {
+  let clpPrice, rmbPrice;
+
+  if (currentCurrency === 'RMB') {
+    rmbPrice = cost;
+    clpPrice = rmbPrice * rateInfo.cnyToClp;
+  } else {
+    clpPrice = cost;
+    rmbPrice = clpPrice * rateInfo.clpToCny;
+  }
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="py-4 px-3 font-semibold text-red-600">${label}</td>
+    <td class="py-4 px-3">${formatNumber(clpPrice)}</td>
+    <td class="py-4 px-3">${formatNumber(rmbPrice)}</td>
+  `;
+  priceRows.appendChild(tr);
 }
 
 function addTableRow(label, basePrice) {
@@ -145,23 +164,23 @@ function addTableRow(label, basePrice) {
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td>${label}</td>
-    <td>${formatNumber(clpPrice)}</td>
-    <td>${formatNumber(rmbPrice)}</td>
+    <td class="py-4 px-3 font-semibold">${label}</td>
+    <td class="py-4 px-3">${formatNumber(clpPrice)}</td>
+    <td class="py-4 px-3">${formatNumber(rmbPrice)}</td>
   `;
   priceRows.appendChild(tr);
 }
 
 function clearTable() {
   priceRows.innerHTML = '';
-  const emptyMargins = [
-    '<tr><td>成本 × 2</td><td>——</td><td>——</td></tr>'
+  const emptyRows = [
+    '<tr><td class="py-4 px-3 font-semibold text-red-600">成本（输入值）</td><td class="py-4 px-3">——</td><td class="py-4 px-3">——</td></tr>',
+    '<tr><td class="py-4 px-3 font-semibold">成本 × 2</td><td class="py-4 px-3">——</td><td class="py-4 px-3">——</td></tr>'
   ];
   for (let i = 20; i <= 100; i += 10) {
-    emptyMargins.push(`<tr><td>+${i}% 毛利</td><td>——</td><td>——</td></tr>`);
+    emptyRows.push(`<tr><td class="py-4 px-3 font-semibold">+${i}% 毛利</td><td class="py-4 px-3">——</td><td class="py-4 px-3">——</td></tr>`);
   }
-  priceRows.innerHTML = emptyMargins.join('');
+  priceRows.innerHTML = emptyRows.join('');
 }
 
-const priceRows = document.querySelector('tbody');
 fetchRates();

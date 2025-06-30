@@ -153,7 +153,7 @@ colgroup col {
 }
 
 th, td {
-  padding: 1rem 0.75rem; /* ✅ 更大的行距 */
+  padding: 1rem 0.75rem;
   border-bottom: 1px solid var(--border-color);
   white-space: nowrap;
   overflow: hidden;
@@ -172,11 +172,7 @@ td {
   color: var(--primary-color);
 }
 
-.col-strategy {
-  text-align: left;
-}
-
-/* 刷新按钮 */
+/* 刷新按钮样式统一绑定 */
 .refresh-btn {
   background: none;
   border: none;
@@ -213,13 +209,11 @@ td {
   background: rgba(239, 68, 68, 0.1);
 }
 
-/* ✅ 汇率标签样式 */
 .rate-label {
   font-weight: 600;
   color: var(--primary-color);
 }
 
-/* ✅ 成本行样式 */
 .cost-row {
   color: #dc2626;
   font-weight: 600;
@@ -251,11 +245,168 @@ td {
   }
 }
 
-/* 强制加粗 .font-semibold 的 <td> */
-td.font-semibold {
-  font-weight: 600;
+
+/* 🌙 深色模式支持 */
+/* From Uiverse.io by andrew-demchenk0 */ 
+
+.switch {
+  font-size: 17px;
+  position: relative;
+  display: inline-block;
+  width: 64px;
+  height: 34px;
 }
 
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #73C0FC;
+  transition: .4s;
+  border-radius: 30px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 30px;
+  width: 30px;
+  border-radius: 20px;
+  left: 2px;
+  bottom: 2px;
+  z-index: 2;
+  background-color: #e8e8e8;
+  transition: .4s;
+}
+
+.sun svg {
+  position: absolute;
+  top: 6px;
+  left: 36px;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+}
+
+.moon svg {
+  fill: #73C0FC;
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+}
+
+.sun svg {
+  animation: rotate 15s linear infinite;
+}
+
+@keyframes rotate {
+  0%   { transform: rotate(0); }
+  100% { transform: rotate(360deg); }
+}
+
+.moon svg {
+  animation: tilt 5s linear infinite;
+}
+
+@keyframes tilt {
+  0%   { transform: rotate(0deg); }
+  25%  { transform: rotate(-10deg); }
+  75%  { transform: rotate(10deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.input:checked + .slider {
+  background-color: #183153;
+}
+
+.input:focus + .slider {
+  box-shadow: 0 0 1px #183153;
+}
+
+.input:checked + .slider:before {
+  transform: translateX(30px);
+}
+
+/* ----- 深色变量 ----- */
+.dark {
+  --bg-color: #18181b;
+  --card-bg: #27272a;
+  --primary-color: #e4e4e7;
+  --secondary-color: #a1a1aa;
+  --table-header-bg: #374151; /* 改为按钮同色 */
+  --border-color: #e5e7eb;
+}
+
+/* ----- 仅工具区域变暗（主题细化）----- */
+.dark body {
+  background-color: #f9fafb !important; /* 页面其余保持浅色 */
+}
+
+.dark .max-w-xl {
+  background-color: var(--card-bg) !important;
+  color: var(--primary-color) !important;
+}
+
+.dark .max-w-xl .text-gray-800,
+.dark .max-w-xl .text-gray-900,
+.dark .max-w-xl .text-gray-700,
+.dark .max-w-xl .text-gray-600 {
+  color: var(--primary-color) !important;
+}
+
+.dark .max-w-xl .bg-gray-50,
+.dark .max-w-xl .bg-gray-100,
+.dark .max-w-xl .bg-white {
+  background-color: #1f2937 !important; /* 和按钮/输入框同样 */
+  border: 0.5px solid #e5e7eb !important;
+  box-shadow: 0 0 0 0.5px #e5e7eb;
+}
+
+.dark .max-w-xl input,
+.dark .max-w-xl .currency-toggle button {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.dark .max-w-xl th {
+  background-color: #1f2937 !important;
+  color: var(--primary-color) !important;
+  border-top: 0.5px solid #e5e7eb !important;
+  border-bottom: 0.5px solid #e5e7eb !important;
+  border-left: 0.5px solid #e5e7eb !important;
+  border-right: 0.5px solid #e5e7eb !important;
+}
+
+
+.dark .max-w-xl td {
+  color: var(--primary-color) !important;
+  border-bottom: 0.5px solid #e5e7eb !important;
+}
+
+.dark .max-w-xl table {
+  border-collapse: collapse;
+  border: 0.5px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dark .max-w-xl .exchange-text,
+.dark .max-w-xl .updated-time {
+  color: var(--secondary-color) !important;
+}
 
 
 

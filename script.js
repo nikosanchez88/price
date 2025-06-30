@@ -7,15 +7,35 @@ const rateInfo = {
 };
 
 let currentCurrency = 'RMB';
-let retryCount = 0;
-const MAX_RETRIES = 3;
+const MARGINS = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
 
-const input = document.querySelector('input[type="number"]');
+const costInput = document.getElementById('costInput');
 const currencyButtons = document.querySelectorAll('.currency-toggle button');
 const exchangeText = document.querySelector('.exchange-text');
 const refreshBtn = document.getElementById('refreshBtn');
-const priceRows = document.querySelector('tbody');
+const priceRows = document.getElementById('priceRows');
 
+// 初始化逻辑（Dark Mode 读取、汇率加载）
+window.addEventListener('DOMContentLoaded', () => {
+  // 初始化主题（Dark Mode）
+  const darkPref = localStorage.getItem('darkMode');
+  const checkbox = document.querySelector('#themeToggle .input');
+  if (darkPref === 'on') {
+    document.documentElement.classList.add('dark');
+    if (checkbox) checkbox.checked = true;
+  }
+  if (checkbox) {
+    checkbox.addEventListener('change', () => {
+      document.documentElement.classList.toggle('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      localStorage.setItem('darkMode', isDark ? 'on' : 'off');
+    });
+  }
+
+  fetchRates();
+});
+
+// 刷新按钮逻辑
 refreshBtn.addEventListener('click', () => {
   refreshBtn.classList.add('loading');
   refreshBtn.disabled = true;
@@ -25,8 +45,7 @@ refreshBtn.addEventListener('click', () => {
 async function fetchRates() {
   if (!navigator.onLine) {
     showError('当前无网络连接，请检查网络');
-    refreshBtn.classList.remove('loading');
-    refreshBtn.disabled = false;
+    resetRefreshBtn();
     return;
   }
 
@@ -47,16 +66,19 @@ async function fetchRates() {
       `🕓 更新时间：${new Date().toLocaleString('zh-CN')}`;
 
     updateRateDisplay();
-    retryCount = 0;
   } catch (e) {
     console.error('获取汇率失败', e);
     showError('获取汇率失败，请检查网络或刷新页面');
   } finally {
-    refreshBtn.classList.remove('loading');
-    setTimeout(() => {
-      refreshBtn.disabled = false;
-    }, 2000);
+    resetRefreshBtn();
   }
+}
+
+function resetRefreshBtn() {
+  refreshBtn.classList.remove('loading');
+  setTimeout(() => {
+    refreshBtn.disabled = false;
+  }, 2000);
 }
 
 function showError(message) {
@@ -68,14 +90,9 @@ function showError(message) {
 }
 
 function updateRateDisplay() {
-  const usdToClp = document.getElementById('usd-clp');
-  const usdToRmb = document.getElementById('usd-rmb');
-  const cnyToClp = document.getElementById('cny-clp');
-
-  if (usdToClp) usdToClp.textContent = formatNumber(rateInfo.clp);
-  if (usdToRmb) usdToRmb.textContent = formatNumber(rateInfo.cny);
-  if (cnyToClp) cnyToClp.textContent = formatNumber(rateInfo.cnyToClp);
-
+  document.getElementById('usd-clp').textContent = formatNumber(rateInfo.clp);
+  document.getElementById('usd-rmb').textContent = formatNumber(rateInfo.cny);
+  document.getElementById('cny-clp').textContent = formatNumber(rateInfo.cnyToClp);
   updateConversionText();
 }
 
@@ -87,29 +104,30 @@ function formatNumber(num) {
 }
 
 function updateConversionText() {
-  if (currentCurrency === 'RMB') {
-    exchangeText.textContent = `当前换算：1 RMB ≈ ${formatNumber(rateInfo.cnyToClp)} CLP`;
-  } else {
-    exchangeText.textContent = `当前换算：1 CLP ≈ ${formatNumber(rateInfo.clpToCny)} RMB`;
-  }
+  exchangeText.textContent =
+    currentCurrency === 'RMB'
+      ? `当前换算：1 RMB ≈ ${formatNumber(rateInfo.cnyToClp)} CLP`
+      : `当前换算：1 CLP ≈ ${formatNumber(rateInfo.clpToCny)} RMB`;
 }
 
+// 币种切换逻辑
 currencyButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     currencyButtons.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    currentCurrency = btn.textContent;
-    input.value = '';
+    currentCurrency = btn.dataset.currency;
+    costInput.value = '';
     clearTable();
     updateConversionText();
   });
 });
 
+// 输入监听逻辑（带防抖）
 let debounceTimer;
-input.addEventListener('input', () => {
+costInput.addEventListener('input', () => {
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
-    const cost = parseFloat(input.value);
+    const cost = parseFloat(costInput.value);
     if (!isNaN(cost)) {
       updateTable(cost);
     } else {
@@ -119,52 +137,28 @@ input.addEventListener('input', () => {
 });
 
 function updateTable(cost) {
-  const margins = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0];
   priceRows.innerHTML = '';
-  addCostRow('成本（输入值）', cost);
-  addTableRow('成本 × 2', cost * 2);
+  createTableRow('成本（输入值）', cost, true);
+  createTableRow('成本 × 2', cost * 2);
 
-  margins.forEach(margin => {
-    const label = `+${Math.round(margin * 100)}% 毛利`;
-    const price = cost * (1 + margin);
-    addTableRow(label, price);
+  MARGINS.forEach(margin => {
+    createTableRow(`+${Math.round(margin * 100)}% 毛利`, cost * (1 + margin));
   });
 }
 
-function addCostRow(label, cost) {
+function createTableRow(label, price, isCost = false) {
   let clpPrice, rmbPrice;
-
   if (currentCurrency === 'RMB') {
-    rmbPrice = cost;
+    rmbPrice = price;
     clpPrice = rmbPrice * rateInfo.cnyToClp;
   } else {
-    clpPrice = cost;
+    clpPrice = price;
     rmbPrice = clpPrice * rateInfo.clpToCny;
   }
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td class="py-4 px-3 font-semibold text-red-600">${label}</td>
-    <td class="py-4 px-3">${formatNumber(clpPrice)}</td>
-    <td class="py-4 px-3">${formatNumber(rmbPrice)}</td>
-  `;
-  priceRows.appendChild(tr);
-}
-
-function addTableRow(label, basePrice) {
-  let clpPrice, rmbPrice;
-
-  if (currentCurrency === 'RMB') {
-    rmbPrice = basePrice;
-    clpPrice = rmbPrice * rateInfo.cnyToClp;
-  } else {
-    clpPrice = basePrice;
-    rmbPrice = clpPrice * rateInfo.clpToCny;
-  }
-
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td class="py-4 px-3 font-semibold">${label}</td>
+    <td class="py-4 px-3 font-semibold ${isCost ? 'text-red-600' : ''}">${label}</td>
     <td class="py-4 px-3">${formatNumber(clpPrice)}</td>
     <td class="py-4 px-3">${formatNumber(rmbPrice)}</td>
   `;
@@ -173,14 +167,9 @@ function addTableRow(label, basePrice) {
 
 function clearTable() {
   priceRows.innerHTML = '';
-  const emptyRows = [
-    '<tr><td class="py-4 px-3 font-semibold text-red-600">成本（输入值）</td><td class="py-4 px-3">——</td><td class="py-4 px-3">——</td></tr>',
-    '<tr><td class="py-4 px-3 font-semibold">成本 × 2</td><td class="py-4 px-3">——</td><td class="py-4 px-3">——</td></tr>'
-  ];
-  for (let i = 20; i <= 100; i += 10) {
-    emptyRows.push(`<tr><td class="py-4 px-3 font-semibold">+${i}% 毛利</td><td class="py-4 px-3">——</td><td class="py-4 px-3">——</td></tr>`);
-  }
-  priceRows.innerHTML = emptyRows.join('');
+  createTableRow('成本（输入值）', 0, true);
+  createTableRow('成本 × 2', 0);
+  MARGINS.forEach(margin => {
+    createTableRow(`+${Math.round(margin * 100)}% 毛利`, 0);
+  });
 }
-
-fetchRates();

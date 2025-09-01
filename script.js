@@ -1,5 +1,6 @@
 let currentCurrency = 'RMB';
-const MARGINS = [0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0];
+// 目标“毛利率”阶梯（按售价）。去掉 100%，避免除以 0。
+const MARGINS = [0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9];
 
 const costInput = document.getElementById('costInput');
 const rateInput = document.getElementById('rateInput');
@@ -32,19 +33,27 @@ currencyButtons.forEach(btn=>{
     const rate=parseFloat(rateInput.value);
     if(!isNaN(cost) && !isNaN(rate) && rate>0){
       updateTable(cost,rate);
-      exchangeHint.textContent=`当前汇率：1 RMB = ${rate} CLP`;
+      if (exchangeHint) exchangeHint.textContent=`当前汇率：1 RMB = ${rate} CLP`;
     }else{
       clearTable();
-      exchangeHint.textContent=`当前汇率：未设置`;
+      if (exchangeHint) exchangeHint.textContent=`当前汇率：未设置`;
     }
   });
 });
 
 function updateTable(cost,rate){
   priceRows.innerHTML='';
+  // 成本原样/翻倍：保持不变
   createRow('成本（输入值）',cost,rate,true,false);
   createRow('成本 × 2',cost*2,rate,false,false);
-  MARGINS.forEach(m=>createRow(`+${Math.round(m*100)}% 毛利`,cost*(1+m),rate,false,true));
+
+  // ✅ 目标“毛利率”计算：price = cost / (1 - margin)
+  MARGINS.forEach(m=>{
+    const label = `目标毛利率 +${Math.round(m*100)}%`;
+    // 安全保护：m 接近 1 会极大放大结果
+    const price = (m >= 0.999) ? Infinity : cost / (1 - m);
+    createRow(label, price, rate, false, true);
+  });
 }
 
 function createRow(label,price,rate,isCost=false,isProfit=false){
@@ -63,7 +72,7 @@ function createRow(label,price,rate,isCost=false,isProfit=false){
   const copyBtn=document.createElement('span');
   copyBtn.textContent='复制';
   copyBtn.className='copy-btn';
-  copyBtn.addEventListener('click',()=>navigator.clipboard.writeText(`${clp} CLP / ${rmb} RMB`));
+  copyBtn.addEventListener('click',()=>navigator.clipboard.writeText(`${td2.textContent} CLP / ${td3.textContent} RMB`));
   td4.appendChild(copyBtn);
 
   tr.append(td1,td2,td3,td4);
@@ -74,5 +83,5 @@ function clearTable(){
   priceRows.innerHTML='';
   createRow('成本（输入值）',0,1,true,false);
   createRow('成本 × 2',0,1,false,false);
-  MARGINS.forEach(m=>createRow(`+${Math.round(m*100)}% 毛利`,0,1,false,true));
+  MARGINS.forEach(m=>createRow(`目标毛利率 +${Math.round(m*100)}%`,0,1,false,true));
 }

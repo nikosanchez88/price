@@ -1,6 +1,17 @@
 let currentCurrency = 'RMB';
 // 目标“毛利率”阶梯（按售价）。去掉 100%，避免除以 0。
-const MARGINS = [0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9];
+const MARGINS = [
+  0.20,
+  0.30,
+  0.40,
+  0.45, // 新增
+  0.50,
+  0.55, // 新增
+  0.60,
+  0.70,
+  0.80,
+  0.90
+];
 
 const costInput = document.getElementById('costInput');
 const rateInput = document.getElementById('rateInput');

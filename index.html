@@ -2,59 +2,121 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>定价工具</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>跨境定价神器 v2.0</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="bg-gray-100 min-h-screen p-6 text-gray-800 font-sans">
-  <div class="max-w-xl mx-auto bg-white rounded-3xl shadow-xl p-8 space-y-6">
+<body class="bg-gray-100 min-h-screen p-4 pb-12 text-gray-800 font-sans">
+  
+  <div class="max-w-xl mx-auto space-y-6">
+    
+    <h1 class="text-2xl font-bold text-center pt-4">🇨🇱 跨境定价神器</h1>
 
-    <h1 class="text-2xl font-bold text-center">定价工具</h1>
-
-    <!-- 参数卡片 -->
-    <div class="param-card space-y-4">
+    <div class="bg-white rounded-3xl shadow-lg p-6 space-y-5 relative">
       <div>
-        <label class="block text-sm font-medium mb-2">汇率 (1 RMB = ? CLP)</label>
-        <input id="rateInput" type="number" placeholder="例如 135" />
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">汇率 (1 RMB = ? CLP)</label>
+        <input id="rateInput" type="number" inputmode="decimal" step="0.01" placeholder="例如 135" />
       </div>
+
       <div>
-        <label class="block text-sm font-medium mb-2">成本币种</label>
+        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">成本币种</label>
         <div class="currency-toggle">
-          <button class="active" data-currency="RMB" aria-pressed="true">RMB</button>
-          <button data-currency="CLP" aria-pressed="false">CLP</button>
+          <button class="active" data-currency="RMB">RMB</button>
+          <button data-currency="CLP">CLP</button>
         </div>
       </div>
-      <div>
-        <label class="block text-sm font-medium mb-2">成本价格</label>
-        <input id="costInput" type="number" placeholder="请输入成本价格..." />
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">商品成本</label>
+          <input id="costInput" type="number" inputmode="decimal" placeholder="0" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">额外杂费 (运费等)</label>
+          <input id="extraInput" type="number" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+        <span class="text-sm font-medium text-gray-700">计算含税价 (+19% IVA)</span>
+        <label class="switch">
+          <input type="checkbox" id="taxToggle" checked>
+          <span class="slider round"></span>
+        </label>
       </div>
     </div>
 
-    <!-- 当前汇率提示 -->
-    <div class="exchange-hint text-sm text-gray-600 text-center mt-2">
-      当前汇率：未设置
+    <div class="exchange-hint text-xs text-gray-500 text-center">当前汇率：未设置</div>
+
+    <div class="overflow-hidden rounded-2xl shadow-md bg-white">
+      <div class="overflow-x-auto">
+        <table>
+          <thead>
+            <tr>
+              <th>利润策略</th>
+              <th>售价 (CLP)</th>
+              <th>折合 (RMB)</th>
+              <th class="w-10"></th>
+            </tr>
+          </thead>
+          <tbody id="priceRows"></tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- 表格 -->
-    <div class="overflow-x-auto table-container mt-6">
-      <table>
-        <thead>
-          <tr>
-            <th>策略</th>
-            <th>价格 (CLP)</th>
-            <th>价格 (RMB)</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="priceRows"></tbody>
-      </table>
+    <div class="bg-gray-800 text-white rounded-3xl shadow-lg p-6">
+      <h2 class="text-lg font-bold mb-4 flex items-center">
+        🔄 反推利润计算器
+      </h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">市场预期售价 (CLP)</label>
+          <input 
+            id="targetPriceInput" 
+            type="number" 
+            inputmode="decimal" 
+            class="w-full rounded-lg p-3" 
+            placeholder="输入你想卖的价格..." 
+          />
+        </div>
+
+        <div id="reverseResult" class="hidden bg-gray-700 rounded-xl p-4 space-y-2">
+          <div class="flex justify-between items-end">
+            <span class="text-gray-300 text-sm">预估毛利率</span>
+            <span id="revMargin" class="text-2xl font-bold">--%</span>
+          </div>
+          <div class="flex justify-between items-center text-sm">
+            <span class="text-gray-400">净利润 (RMB)</span>
+            <span id="revProfitRMB" class="font-mono">--</span>
+          </div>
+          <div class="text-xs text-gray-500 mt-2 border-t border-gray-600 pt-2" id="revTaxHint">
+            *已扣除 19% IVA 及杂费
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="footer-text">Designed for personal use</div>
+    <div class="text-center text-xs text-gray-400 pb-6">
+      Designed for Personal Use v2.0
+    </div>
   </div>
 
   <script src="script.js"></script>
+  
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('Service Worker Registered'))
+        .catch(err => console.log('SW Failed', err));
+    }
+  </script>
 </body>
 </html>

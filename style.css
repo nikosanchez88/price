@@ -1,36 +1,115 @@
 :root {
-  --primary-color:#2d2d2d;
-  --secondary-color:#6b7280;
-  --accent-color:#3b82f6;
-  --bg-color:#f9fafb;
-  --card-bg:#ffffff;
-  --table-header-bg:#f3f4f6;
-  --border-color:#e5e7eb;
-  --font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --primary-color: #2d2d2d;
+  --accent-color: #3b82f6;
+  --border-color: #e5e7eb;
 }
 
-body { margin:0; font-family:var(--font-family); background:var(--bg-color); color:var(--primary-color); }
-h1 { font-size:1.8rem; font-weight:600; margin-bottom:.5rem; text-align:center; }
+body {
+  /* 禁止双击缩放，提升移动端体验 */
+  touch-action: manipulation; 
+}
 
-.param-card input { padding:.7rem; border:1px solid var(--border-color); border-radius:10px; width:100%; }
-.param-card input:focus { outline:none; border-color:var(--accent-color); box-shadow:0 0 0 2px rgba(59,130,246,.2); }
+/* 输入框通用样式 */
+input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  transition: all 0.2s;
+  background-color: #f9fafb;
+}
 
-.currency-toggle { display:flex; gap:.5rem; }
-.currency-toggle button { flex:1; padding:.6rem 1rem; border:1px solid var(--border-color); border-radius:9999px; cursor:pointer; }
-.currency-toggle button.active { background:var(--accent-color); color:#fff; }
+input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
 
-.table-container { overflow-x:auto; }
-table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
-th, td { padding:.8rem; border-bottom:1px solid var(--border-color); text-align:center; }
-th { background:var(--table-header-bg); color:var(--secondary-color); }
-tbody tr:hover { background:#f9fafb; }
+/* 币种切换按钮 */
+.currency-toggle {
+  display: flex;
+  background: #f3f4f6;
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+}
 
-.footer-text { text-align:center; font-size:.8rem; color:var(--secondary-color); margin-top:1.5rem; }
+.currency-toggle button {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
 
-/* 成本行红色，毛利行绿色 */
-.cost-row td:first-child { color:#dc2626; font-weight:600; }
-.profit-row td:first-child { color:#16a34a; font-weight:600; }
+.currency-toggle button.active {
+  background: white;
+  color: var(--accent-color);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* 表格样式 */
+table { width: 100%; border-collapse: collapse; }
+th { 
+  background: #f9fafb; 
+  padding: 0.75rem; 
+  font-size: 0.8rem; 
+  color: #6b7280; 
+  text-transform: uppercase; 
+  letter-spacing: 0.05em;
+}
+td { 
+  padding: 0.8rem 0.75rem; 
+  border-bottom: 1px solid #f3f4f6; 
+  text-align: center; 
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+tr:last-child td { border-bottom: none; }
 
 /* 复制按钮 */
-.copy-btn { cursor:pointer; color:var(--accent-color); font-size:0.9rem; }
-.copy-btn:hover { text-decoration:underline; }
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: #9ca3af;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.copy-btn:active { background: #f3f4f6; color: var(--accent-color); }
+
+/* iOS 风格 Switch 开关 */
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e5e7eb; transition: .3s; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; transition: .3s; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+.slider.round { border-radius: 24px; }
+.slider.round:before { border-radius: 50%; }
+input:checked + .slider { background-color: #10b981; } /* 绿色开启 */
+input:checked + .slider:before { transform: translateX(20px); }
+
+/* --- 修复暗色模式下的输入框体验 --- */
+#targetPriceInput {
+  /* 默认状态：深灰色背景，白色文字，细灰色边框 */
+  background-color: #374151; 
+  color: white;
+  border: 1px solid #4b5563;
+}
+
+#targetPriceInput::placeholder {
+  color: #9ca3af; /* 占位符颜色调淡，避免刺眼 */
+}
+
+#targetPriceInput:focus {
+  /* 聚焦状态：保持深色背景！不要变白！ */
+  background-color: #374151; 
+  
+  /* 边框发亮，和上方输入框一致 */
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}

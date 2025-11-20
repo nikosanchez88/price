@@ -1,5 +1,6 @@
+// 配置常量
 let currentCurrency = 'RMB';
-// 目标“毛利率”阶梯（按售价）。去掉 100%，避免除以 0。
+// 1. 恢复了完整的毛利阶梯
 const MARGINS = [
   0.20,
   0.30,
@@ -13,86 +14,189 @@ const MARGINS = [
   0.90
 ];
 
-const costInput = document.getElementById('costInput');
-const rateInput = document.getElementById('rateInput');
-const currencyButtons = document.querySelectorAll('.currency-toggle button');
-const priceRows = document.getElementById('priceRows');
-const exchangeHint = document.querySelector('.exchange-hint');
+// DOM 元素
+const els = {
+  cost: document.getElementById('costInput'),
+  extra: document.getElementById('extraInput'),
+  rate: document.getElementById('rateInput'),
+  tax: document.getElementById('taxToggle'),
+  targetPrice: document.getElementById('targetPriceInput'),
+  currencyBtns: document.querySelectorAll('.currency-toggle button'),
+  rows: document.getElementById('priceRows'),
+  hint: document.querySelector('.exchange-hint'),
+  revResult: document.getElementById('reverseResult'),
+  revMargin: document.getElementById('revMargin'),
+  revProfit: document.getElementById('revProfitRMB'),
+  revTaxHint: document.getElementById('revTaxHint')
+};
 
-const fmtCLP = new Intl.NumberFormat('zh-CN',{ maximumFractionDigits:0 });
-const fmtCNY = new Intl.NumberFormat('zh-CN',{ minimumFractionDigits:2, maximumFractionDigits:2 });
-const fmt = (n,c)=>isFinite(n)?(c==='CLP'?fmtCLP:fmtCNY).format(n):'——';
+// 格式化工具
+const fmtCLP = new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 });
+const fmtCNY = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const roundCLP = (n) => Math.ceil(n / 10) * 10; // 向上取整到10
 
-// 初始渲染
-window.addEventListener('DOMContentLoaded', clearTable);
+// --- 初始化 ---
+window.addEventListener('DOMContentLoaded', () => {
+  const savedRate = localStorage.getItem('exchangeRate');
+  if (savedRate) els.rate.value = savedRate;
+  triggerUpdate();
+});
 
-// 币种切换
-currencyButtons.forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    currencyButtons.forEach(b=>{b.classList.remove('active');b.setAttribute('aria-pressed','false');});
-    btn.classList.add('active');btn.setAttribute('aria-pressed','true');
-    currentCurrency=btn.dataset.currency;
-    costInput.value='';
-    clearTable();
+// --- 事件监听 ---
+// 1. 所有输入框变动 -> 触发计算
+[els.cost, els.extra, els.rate, els.tax].forEach(el => {
+  el.addEventListener('input', () => {
+    if (el === els.rate) localStorage.setItem('exchangeRate', els.rate.value);
+    triggerUpdate();
   });
 });
 
-// 输入监听
-[costInput, rateInput].forEach(inp=>{
-  inp.addEventListener('input',()=>{
-    const cost=parseFloat(costInput.value);
-    const rate=parseFloat(rateInput.value);
-    if(!isNaN(cost) && !isNaN(rate) && rate>0){
-      updateTable(cost,rate);
-      if (exchangeHint) exchangeHint.textContent=`当前汇率：1 RMB = ${rate} CLP`;
-    }else{
-      clearTable();
-      if (exchangeHint) exchangeHint.textContent=`当前汇率：未设置`;
-    }
+// 2. 币种切换
+els.currencyBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    els.currencyBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCurrency = btn.dataset.currency;
+    triggerUpdate();
   });
 });
 
-function updateTable(cost,rate){
-  priceRows.innerHTML='';
-  // 成本原样/翻倍：保持不变
-  createRow('成本（输入值）',cost,rate,true,false);
-  createRow('成本 × 2',cost*2,rate,false,false);
+// 3. 反推利润计算
+els.targetPrice.addEventListener('input', calcReverseProfit);
 
-  // ✅ 目标“毛利率”计算：price = cost / (1 - margin)
-  MARGINS.forEach(m=>{
-    const label = `目标毛利率 +${Math.round(m*100)}%`;
-    // 安全保护：m 接近 1 会极大放大结果
-    const price = (m >= 0.999) ? Infinity : cost / (1 - m);
-    createRow(label, price, rate, false, true);
+// --- 核心逻辑 ---
+
+function triggerUpdate() {
+  const cost = parseFloat(els.cost.value) || 0;
+  const extra = parseFloat(els.extra.value) || 0;
+  const rate = parseFloat(els.rate.value);
+  const hasTax = els.tax.checked;
+
+  // 更新提示
+  if (rate) els.hint.textContent = `当前汇率: 1 RMB = ${rate} CLP`;
+  
+  // 清空或更新表格
+  els.rows.innerHTML = '';
+  if (!rate || cost <= 0) {
+    // 这里可以放空状态，或者什么都不做
+    calcReverseProfit(); // 即使没成本，也要尝试更新反推模块的状态
+    return;
+  }
+
+  // 基础成本显示 (Total Cost)
+  const totalCost = cost + extra;
+  createRow('总成本 (含杂费)', totalCost, rate, false, true, false);
+
+  // 循环生成价格策略
+  MARGINS.forEach(margin => {
+    // 1. 先算未税售价： 成本 / (1 - 毛利率)
+    let rawPrice = totalCost / (1 - margin);
+    
+    // 2. 如果需要含税，则 x 1.19
+    if (hasTax) rawPrice = rawPrice * 1.19;
+
+    const label = `毛利 ${Math.round(margin * 100)}%`;
+    createRow(label, rawPrice, rate, hasTax, false, true);
   });
+
+  // 联动更新反推模块（如果用户已经输入了目标价，成本变动时也实时更新反推结果）
+  calcReverseProfit();
 }
 
-function createRow(label,price,rate,isCost=false,isProfit=false){
-  let clp,rmb;
-  if(currentCurrency==='RMB'){ rmb=price; clp=rmb*rate; }
-  else { clp=price; rmb=clp/rate; }
+function createRow(label, priceBase, rate, isTaxed, isCostRow, isProfitRow) {
+  let clp, rmb;
 
-  const tr=document.createElement('tr');
-  if(isCost) tr.classList.add('cost-row');
-  if(isProfit) tr.classList.add('profit-row');
+  // 货币换算逻辑
+  if (currentCurrency === 'RMB') {
+    rmb = priceBase;
+    clp = rmb * rate;
+  } else {
+    clp = priceBase;
+    rmb = clp / rate;
+  }
 
-  const td1=document.createElement('td'); td1.textContent=label;
-  const td2=document.createElement('td'); td2.textContent=fmt(clp,'CLP');
-  const td3=document.createElement('td'); td3.textContent=fmt(rmb,'RMB');
-  const td4=document.createElement('td');
-  const copyBtn=document.createElement('span');
-  copyBtn.textContent='复制';
-  copyBtn.className='copy-btn';
-  copyBtn.addEventListener('click',()=>navigator.clipboard.writeText(`${td2.textContent} CLP / ${td3.textContent} RMB`));
-  td4.appendChild(copyBtn);
+  clp = roundCLP(clp); // 智利比索取整
 
-  tr.append(td1,td2,td3,td4);
-  priceRows.appendChild(tr);
+  const tr = document.createElement('tr');
+  // 样式处理
+  if (isCostRow) tr.className = 'bg-red-50 text-red-600 font-medium';
+  
+  const tdLabel = document.createElement('td');
+  tdLabel.innerHTML = `${label} ${isTaxed ? '<span class="text-xs text-green-600 ml-1">iva</span>' : ''}`;
+  
+  const tdCLP = document.createElement('td'); 
+  tdCLP.className = "font-bold";
+  tdCLP.textContent = fmtCLP.format(clp);
+  
+  const tdRMB = document.createElement('td'); 
+  tdRMB.className = "text-gray-500 text-sm";
+  tdRMB.textContent = fmtCNY.format(rmb);
+
+  const tdAction = document.createElement('td');
+  const btn = document.createElement('span');
+  btn.className = 'copy-btn text-gray-400 hover:text-blue-500';
+  btn.innerHTML = '📋'; // 使用 Emoji 简化
+  btn.onclick = () => {
+    navigator.clipboard.writeText(`${fmtCLP.format(clp)} CLP`);
+    btn.innerHTML = '✅';
+    setTimeout(() => btn.innerHTML = '📋', 1000);
+  };
+  tdAction.appendChild(btn);
+
+  tr.append(tdLabel, tdCLP, tdRMB, tdAction);
+  els.rows.appendChild(tr);
 }
 
-function clearTable(){
-  priceRows.innerHTML='';
-  createRow('成本（输入值）',0,1,true,false);
-  createRow('成本 × 2',0,1,false,false);
-  MARGINS.forEach(m=>createRow(`目标毛利率 +${Math.round(m*100)}%`,0,1,false,true));
+// --- 反推利润逻辑 ---
+function calcReverseProfit() {
+  const targetPrice = parseFloat(els.targetPrice.value);
+  const cost = parseFloat(els.cost.value) || 0;
+  const extra = parseFloat(els.extra.value) || 0;
+  const rate = parseFloat(els.rate.value);
+  
+  if (!targetPrice || !rate || cost <= 0) {
+    els.revResult.classList.add('hidden');
+    return;
+  }
+
+  els.revResult.classList.remove('hidden');
+  const hasTax = els.tax.checked;
+
+  // 1. 计算净收入 (Net Revenue)
+  // 如果输入的价格是含税的，我们需要先剔除税，才能算毛利
+  // 假设用户输入的"市场价"通常是含税价 (货架价)
+  // 如果上面的开关开了，说明我们全套逻辑都是含税的
+  
+  let netRevenueCLP = targetPrice;
+  if (hasTax) {
+    netRevenueCLP = targetPrice / 1.19; // 剔除增值税
+    els.revTaxHint.textContent = "* 已从售价中扣除 19% IVA 计算净利";
+  } else {
+    els.revTaxHint.textContent = "* 未扣除税费 (假设出口免税或未税交易)";
+  }
+
+  // 2. 计算总成本 (转为 CLP)
+  let totalCostCLP = (cost + extra);
+  if (currentCurrency === 'RMB') totalCostCLP = totalCostCLP * rate;
+
+  // 3. 计算利润
+  const profitCLP = netRevenueCLP - totalCostCLP;
+  const profitRMB = profitCLP / rate;
+  
+  // 4. 计算毛利率 (Profit / Net Revenue)
+  // 注意：毛利率通常是 (销售收入-成本)/销售收入
+  const margin = (profitCLP / netRevenueCLP) * 100;
+
+  // 渲染
+  els.revMargin.textContent = margin.toFixed(1) + '%';
+  els.revProfit.textContent = fmtCNY.format(profitRMB);
+
+  // 颜色反馈
+  if (margin < 20) {
+    els.revMargin.className = "text-2xl font-bold text-red-400"; // 亏本或低利
+  } else if (margin > 40) {
+    els.revMargin.className = "text-2xl font-bold text-green-400"; // 暴利
+  } else {
+    els.revMargin.className = "text-2xl font-bold text-yellow-400"; // 正常
+  }
 }

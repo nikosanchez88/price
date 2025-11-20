@@ -1,115 +1,214 @@
+/* --- iOS Design System Variables --- */
 :root {
-  --primary-color: #2d2d2d;
-  --accent-color: #3b82f6;
-  --border-color: #e5e7eb;
+  /* 苹果系统色板 */
+  --ios-bg: #F2F2F7;           /* 系统背景灰 */
+  --ios-card: #FFFFFF;         /* 卡片纯白 */
+  --ios-text-primary: #000000;
+  --ios-text-secondary: #8E8E93;
+  --ios-blue: #007AFF;
+  --ios-green: #34C759;
+  --ios-red: #FF3B30;
+  --ios-separator: #C6C6C8;
+  --ios-input-bg: #7676801F;   /* 经典的输入框浅灰背景 */
+  
+  /* 暗色小组件颜色 */
+  --widget-bg: #1C1C1E;        /* 类似于 iOS 深色模式背景 */
+  --widget-input: #2C2C2E;
 }
 
+/* 基础设定：使用苹果系统字体 */
 body {
-  /* 禁止双击缩放，提升移动端体验 */
-  touch-action: manipulation; 
+  background-color: var(--ios-bg);
+  color: var(--ios-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased; /* 让字体更清晰 */
+  padding-bottom: 40px; /* 底部留白 */
+  touch-action: manipulation;
 }
 
-/* 输入框通用样式 */
+h1 {
+  font-weight: 700;
+  letter-spacing: -0.5px; /* 紧凑的标题字距 */
+  color: #1C1C1E;
+  margin-bottom: 1.5rem;
+}
+
+/* --- 1. 卡片 (Surface) --- */
+/* 模仿 iOS 的卡片，去掉生硬的阴影，使用大圆角 */
+.ios-card {
+  background: var(--ios-card);
+  border-radius: 20px; /* iOS 标准大圆角 */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); /* 极其柔和的弥散阴影 */
+  border: 1px solid rgba(0,0,0,0.02); /* 极细微的边框增强质感 */
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+/* --- 2. 输入框 (Input Fields) --- */
+/* 去掉边框，使用浅灰色背景，像 iPad 搜索框 */
 input {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid var(--border-color);
-  border-radius: 0.75rem;
-  font-size: 1rem;
-  transition: all 0.2s;
-  background-color: #f9fafb;
+  /* 关键修改：把左右内边距加大到 24px */
+  padding: 14px 24px; 
+  
+  border-radius: 16px; /* 稍微调整圆角，让它更圆润 */
+  border: none;
+  background-color: var(--ios-input-bg);
+  color: var(--ios-text-primary);
+  
+  /* 保持 17px 字号，這是 iOS 标准，不要变小，否则手机上看会累 */
+  font-size: 17px; 
+  
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+  min-width: 0;
+  
+  /* 保持左对齐 */
+  text-align: left; 
 }
 
+/* 输入框聚焦：轻微放大背景亮度，而不是加粗边框 */
 input:focus {
   outline: none;
-  border-color: var(--accent-color);
-  background-color: #fff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background-color: #Eaeaec; /* 稍微变亮 */
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3); /* 极淡的蓝色光晕 */
 }
 
-/* 币种切换按钮 */
+/* 标签文字：全大写、灰色、小字号 */
+label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--ios-text-secondary);
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* --- 3. 分段控制器 (Segmented Control) --- */
+/* 只有 iOS 才有这种顺滑的切换条 */
 .currency-toggle {
+  background-color: var(--ios-input-bg);
+  padding: 3px;
+  border-radius: 9px;
   display: flex;
-  background: #f3f4f6;
-  padding: 0.25rem;
-  border-radius: 0.75rem;
+  position: relative;
 }
 
 .currency-toggle button {
   flex: 1;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  font-size: 0.9rem;
+  border: none;
+  background: transparent;
+  padding: 6px 0;
+  font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
-  transition: all 0.2s ease;
+  color: var(--ios-text-primary);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* 弹性动画 */
 }
 
+/* 选中状态：变成白色小卡片，带一点点阴影 */
 .currency-toggle button.active {
-  background: white;
-  color: var(--accent-color);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background-color: #FFFFFF;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04);
+  font-weight: 600;
+  color: #000;
 }
 
-/* 表格样式 */
-table { width: 100%; border-collapse: collapse; }
-th { 
-  background: #f9fafb; 
-  padding: 0.75rem; 
-  font-size: 0.8rem; 
-  color: #6b7280; 
-  text-transform: uppercase; 
-  letter-spacing: 0.05em;
+/* --- 4. 表格 (List View) --- */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
 }
-td { 
-  padding: 0.8rem 0.75rem; 
-  border-bottom: 1px solid #f3f4f6; 
-  text-align: center; 
-  font-feature-settings: "tnum";
-  font-variant-numeric: tabular-nums;
+
+th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ios-text-secondary);
+  text-transform: uppercase;
+  background: rgba(249, 249, 249, 0.8);
+  backdrop-filter: blur(10px); /* 毛玻璃表头 */
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
 }
+
+/* 内容行：居中对齐微调 */
+th:nth-child(2), th:nth-child(3), 
+td:nth-child(2), td:nth-child(3) {
+  text-align: right; /* 价格数字靠右对齐，这是财务软件标准 */
+}
+
+td {
+  padding: 14px 16px;
+  font-size: 15px;
+  border-bottom: 1px solid rgba(0,0,0,0.05); /* 极细分割线 */
+  font-variant-numeric: tabular-nums; /* 数字等宽 */
+}
+
 tr:last-child td { border-bottom: none; }
 
-/* 复制按钮 */
-.copy-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  color: #9ca3af;
-  cursor: pointer;
-  border-radius: 4px;
-}
-.copy-btn:active { background: #f3f4f6; color: var(--accent-color); }
+/* 成本行高亮 */
+.bg-red-50 { background-color: #FFF2F2 !important; }
+.text-red-600 { color: var(--ios-red) !important; }
 
-/* iOS 风格 Switch 开关 */
-.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+
+/* 复制按钮优化 */
+.copy-btn {
+  display: inline-flex;     /* 弹性布局 */
+  align-items: center;      /* 垂直居中 */
+  justify-content: center;  /* 水平居中 */
+  width: 32px;              /* 稍微加大一点触控区域 */
+  height: 32px;
+  border-radius: 8px;       /* 方形圆角，更像 App 按钮 */
+  cursor: pointer;
+  color: #C7C7CC;           /* 默认浅灰 */
+}
+
+.copy-btn:active {
+  background-color: rgba(0,0,0,0.05); /* 点击时的反馈 */
+  transform: scale(0.95); /* 点击微缩效果 */
+}
+
+/* --- 5. iOS 开关 (Switch) 完美复刻 --- */
+.switch { position: relative; display: inline-block; width: 51px; height: 31px; }
 .switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e5e7eb; transition: .3s; }
-.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; transition: .3s; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-.slider.round { border-radius: 24px; }
-.slider.round:before { border-radius: 50%; }
-input:checked + .slider { background-color: #10b981; } /* 绿色开启 */
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #E9E9EA; transition: .4s; border-radius: 31px; }
+.slider:before { position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 3px 1px rgba(0,0,0,0.06); }
+input:checked + .slider { background-color: var(--ios-green); }
 input:checked + .slider:before { transform: translateX(20px); }
 
-/* --- 修复暗色模式下的输入框体验 --- */
-#targetPriceInput {
-  /* 默认状态：深灰色背景，白色文字，细灰色边框 */
-  background-color: #374151; 
+/* --- 6. 暗黑模式小组件 (Dark Mode Widget) --- */
+.widget-dark {
+  background-color: var(--widget-bg);
   color: white;
-  border: 1px solid #4b5563;
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2); /* 深邃的阴影 */
 }
 
-#targetPriceInput::placeholder {
-  color: #9ca3af; /* 占位符颜色调淡，避免刺眼 */
-}
+.widget-dark h2 { color: white; font-size: 19px; margin-bottom: 16px; letter-spacing: 0.3px; }
+.widget-dark label { color: #8E8E93; }
 
+/* 专为暗色模式优化的输入框 */
+#targetPriceInput {
+  background-color: var(--widget-input);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.1); /* 微弱的白边 */
+}
+#targetPriceInput::placeholder { color: #636366; }
 #targetPriceInput:focus {
-  /* 聚焦状态：保持深色背景！不要变白！ */
-  background-color: #374151; 
-  
-  /* 边框发亮，和上方输入框一致 */
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  background-color: #3A3A3C;
+  border-color: var(--ios-blue);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.3);
+}
+
+/* 结果区域 */
+#reverseResult {
+  background-color: #2C2C2E; /* 次级黑色 */
+  border-radius: 14px;
 }

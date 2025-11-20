@@ -103,6 +103,8 @@ function triggerUpdate() {
   calcReverseProfit();
 }
 
+// ... 前面的代码保持不变 ...
+
 function createRow(label, priceBase, rate, isTaxed, isCostRow, isProfitRow) {
   let clp, rmb;
 
@@ -115,14 +117,14 @@ function createRow(label, priceBase, rate, isTaxed, isCostRow, isProfitRow) {
     rmb = clp / rate;
   }
 
-  clp = roundCLP(clp); // 智利比索取整
+  clp = roundCLP(clp); 
 
   const tr = document.createElement('tr');
-  // 样式处理
   if (isCostRow) tr.className = 'bg-red-50 text-red-600 font-medium';
   
   const tdLabel = document.createElement('td');
-  tdLabel.innerHTML = `${label} ${isTaxed ? '<span class="text-xs text-green-600 ml-1">iva</span>' : ''}`;
+  tdLabel.className = "pl-6"; // 增加左侧缩进，对齐表头
+  tdLabel.innerHTML = `${label} ${isTaxed ? '<span class="text-xs text-green-600 ml-1 font-normal">IVA</span>' : ''}`;
   
   const tdCLP = document.createElement('td'); 
   tdCLP.className = "font-bold";
@@ -133,16 +135,31 @@ function createRow(label, priceBase, rate, isTaxed, isCostRow, isProfitRow) {
   tdRMB.textContent = fmtCNY.format(rmb);
 
   const tdAction = document.createElement('td');
-  const btn = document.createElement('span');
-  btn.className = 'copy-btn text-gray-400 hover:text-blue-500';
-  btn.innerHTML = '📋'; // 使用 Emoji 简化
+  
+  // --- ✨ 图标核心修改开始 ---
+  const btn = document.createElement('div'); // 改用 div 方便布局
+  btn.className = 'copy-btn text-gray-400 hover:text-blue-500 transition-colors duration-200';
+  
+  // 定义 SVG 图标 (极简线条风格)
+  const iconCopy = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+  const iconCheck = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#34C759" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+
+  btn.innerHTML = iconCopy; // 默认显示复制图标
+
   btn.onclick = () => {
     navigator.clipboard.writeText(`${fmtCLP.format(clp)} CLP`);
-    btn.innerHTML = '✅';
-    setTimeout(() => btn.innerHTML = '📋', 1000);
+    
+    // 切换成对勾图标
+    btn.innerHTML = iconCheck;
+    
+    // 1.5秒后变回来
+    setTimeout(() => {
+      btn.innerHTML = iconCopy;
+    }, 1500);
   };
-  tdAction.appendChild(btn);
+  // --- ✨ 图标核心修改结束 ---
 
+  tdAction.appendChild(btn);
   tr.append(tdLabel, tdCLP, tdRMB, tdAction);
   els.rows.appendChild(tr);
 }

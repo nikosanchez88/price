@@ -1,4 +1,4 @@
-const CACHE_NAME = 'price-tool-v2';
+const CACHE_NAME = 'price-tool-v3';
 const ASSETS = [
   './',
   './index.html',

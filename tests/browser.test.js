@@ -161,7 +161,7 @@ test('a manually entered rate is restored until the user clears it', async () =>
   await context.close();
 });
 
-test('copy buttons report clipboard success and failure honestly', async () => {
+test('the entire margin row copies its CLP price with honest feedback', async () => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     serviceWorkers: 'block',
@@ -173,9 +173,15 @@ test('copy buttons report clipboard success and failure honestly', async () => {
 
   await page.locator('#rateInput').fill('135');
   await page.locator('#factoryPriceInput').fill('100');
-  await page.locator('.copy-button').first().click();
-  await page.waitForFunction(() => document.querySelector('#copyStatus')?.textContent === '已复制 16.880 CLP');
-  assert.equal(await page.locator('#copyStatus').textContent(), '已复制 16.880 CLP');
+  const firstAction = page.locator('.price-action').first();
+  await firstAction.click();
+  await page.waitForFunction(() => document.querySelector('#copyStatus')?.textContent === '已复制 15.000 CLP');
+  assert.equal(await firstAction.getAttribute('data-copied'), 'true');
+  assert.equal(await page.locator('#copyStatus').textContent(), '已复制 15.000 CLP');
+
+  await firstAction.focus();
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#copyStatus').textContent(), '已复制 15.000 CLP');
 
   await page.evaluate(() => {
     Object.defineProperty(navigator, 'clipboard', {
@@ -183,9 +189,25 @@ test('copy buttons report clipboard success and failure honestly', async () => {
       value: { writeText: () => Promise.reject(new Error('denied')) },
     });
   });
-  await page.locator('.copy-button').nth(1).click();
-  await page.waitForFunction(() => document.querySelector('#copyStatus')?.textContent === '复制失败，请手动复制');
-  assert.equal(await page.locator('#copyStatus').textContent(), '复制失败，请手动复制');
+  await page.locator('.price-action').nth(1).click();
+  await page.waitForFunction(() => document.querySelector('#copyStatus')?.textContent === '复制失败，请长按价格手动复制');
+  assert.equal(await page.locator('.price-action').nth(1).getAttribute('data-copied'), 'false');
+  assert.equal(await page.locator('#copyStatus').textContent(), '复制失败，请长按价格手动复制');
+  await context.close();
+});
+
+test('reverse margin is collapsed by default and calculates after expansion', async () => {
+  const { context, page } = await openPage();
+  const disclosure = page.locator('#reverseDisclosure');
+  assert.equal(await disclosure.getAttribute('open'), null);
+  await disclosure.locator('summary').click();
+  assert.notEqual(await disclosure.getAttribute('open'), null);
+  await page.locator('#rateInput').fill('135');
+  await page.locator('#factoryPriceInput').fill('100');
+  await page.locator('#targetPriceInput').fill('16875');
+  assert.equal(await page.locator('#reverseMargin').textContent(), '20.0%');
+  assert.equal(await page.locator('#reverseProfitRmb').textContent(), '25.00');
+  assert.equal(await page.locator('#reverseAssessment').textContent(), '常规');
   await context.close();
 });
 

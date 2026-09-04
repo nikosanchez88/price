@@ -63,7 +63,7 @@ async function copyPrice(button, text, statusElement) {
   } catch {
     button.dataset.copied = 'false';
     statusElement.dataset.state = 'error';
-    statusElement.textContent = '复制失败，请手动复制';
+    statusElement.textContent = '复制失败，请长按价格手动复制';
   }
 }
 
@@ -84,6 +84,7 @@ function initializeApp() {
     copyStatus: document.querySelector('#copyStatus'),
     reverseResult: document.querySelector('#reverseResult'),
     reverseMargin: document.querySelector('#reverseMargin'),
+    reverseAssessment: document.querySelector('#reverseAssessment'),
     reverseProfitRmb: document.querySelector('#reverseProfitRmb'),
   };
   let currentCurrency = 'RMB';
@@ -120,20 +121,28 @@ function initializeApp() {
     elements.priceList.append(row);
   }
 
+  function createCopyIcon() {
+    const icon = document.createElement('span');
+    icon.className = 'copy-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    icon.innerHTML = '<svg viewBox="0 0 24 24" focusable="false"><rect x="8" y="8" width="10" height="10" rx="2"></rect><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path></svg><span class="copy-check">✓</span>';
+    return icon;
+  }
+
   function appendMarginRow(label, values) {
-    const row = document.createElement('div');
-    row.className = 'price-row margin-row';
-    appendPriceText(row, label, values);
-    const copyButton = document.createElement('button');
+    const button = document.createElement('button');
     const copyText = `${fmtClp.format(values.clp)} CLP`;
-    copyButton.type = 'button';
-    copyButton.className = 'copy-button';
-    copyButton.dataset.copied = 'false';
-    copyButton.setAttribute('aria-label', `复制 ${copyText} 售价`);
-    copyButton.textContent = '复制';
-    copyButton.addEventListener('click', () => copyPrice(copyButton, copyText, elements.copyStatus));
-    row.append(copyButton);
-    elements.priceList.append(row);
+    button.type = 'button';
+    button.className = 'price-row price-action';
+    button.dataset.copied = 'false';
+    button.setAttribute(
+      'aria-label',
+      `${label}，${copyText}，${fmtRmb.format(values.rmb)} RMB，点击复制`,
+    );
+    appendPriceText(button, label, values);
+    button.append(createCopyIcon());
+    button.addEventListener('click', () => copyPrice(button, copyText, elements.copyStatus));
+    elements.priceList.append(button);
   }
 
   function render() {
@@ -188,9 +197,13 @@ function initializeApp() {
     elements.reverseResult.hidden = false;
     elements.reverseMargin.textContent = `${reverse.marginPercent.toFixed(1)}%`;
     elements.reverseProfitRmb.textContent = fmtRmb.format(reverse.profitRmb);
-    elements.reverseMargin.className = reverse.marginPercent < 20
-      ? 'margin-low'
-      : reverse.marginPercent > 40 ? 'margin-high' : 'margin-medium';
+    const marginBand = reverse.marginPercent < 20
+      ? { className: 'margin-low', label: '偏低' }
+      : reverse.marginPercent > 40
+        ? { className: 'margin-high', label: '较高' }
+        : { className: 'margin-medium', label: '常规' };
+    elements.reverseMargin.className = marginBand.className;
+    elements.reverseAssessment.textContent = marginBand.label;
   }
 
   elements.rate.value = readSavedRate(window.localStorage);

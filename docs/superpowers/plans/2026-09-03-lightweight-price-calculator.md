@@ -21,6 +21,19 @@
 - 保留现有 iOS 风格方向，修复焦点、标签、对比度和键盘操作问题。
 - 使用 Node 内置测试运行器，实施过程遵循先失败、后实现、再通过的顺序。
 
+## Execution Correction: Behavior-First Browser Tests
+
+Critical plan review found that the originally listed `tests/markup.test.js` and `tests/pwa-contract.test.js` would only inspect source strings. Those source-contract tests are superseded by `tests/browser.test.js`, which serves the real application, launches installed Microsoft Edge through `playwright-core`, and asserts rendered behavior, network traffic, Service Worker state, offline reload, keyboard focus, and axe accessibility results. `playwright-core` and `axe-core` are development-only dependencies; `node:test` remains the only test runner and the application still has no production dependencies.
+
+The replacement browser tests must fail before their corresponding production change and cover these observable outcomes:
+
+- Task 2: no cross-origin runtime request; no rendered IVA or extra-fee control; labeled rate, factory-price, and target-price inputs; mobile viewport permits zoom; Tab produces a visible focus indicator.
+- Task 3: RMB/CLP calculations, reverse margin, invalid-input clearing, currency `aria-pressed` state, rate persistence/clearing, and clipboard success/failure feedback.
+- Task 4: `navigator.serviceWorker.ready` resolves; only the current `price-tool-*` cache remains; the manifest reports the real icon dimensions/theme; the complete calculator reloads while the browser context is offline.
+- Task 5: an injected `axe-core` WCAG 2.1 A/AA scan has no label, disabled-zoom, keyboard-control, or serious color-contrast violation.
+
+Before Task 2's first RED run, add the development dependencies with `npm install --save-dev playwright-core@1.62.1 axe-core@4.13.0`. Create `tests/browser-helpers.js` with a Node HTTP static server, explicit MIME types, installed Edge discovery, and cleanup registered through `test.after()`. Each browser test uses a fresh context; Service Worker tests use a fresh browser process so earlier cache state cannot satisfy the assertion.
+
 ---
 
 ## File Map
@@ -28,9 +41,9 @@
 - Create `calculator.js`: 数值验证、换算、价格阶梯和反推毛利的纯函数。
 - Create `package.json`: ES module 声明和 `npm test` 命令，无生产依赖。
 - Create `tests/calculator.test.js`: 计算核心单元测试。
-- Create `tests/markup.test.js`: 页面结构、文案和本地资源契约测试。
+- Create `tests/browser-helpers.js`: 本地静态服务器、Edge 启动和测试清理。
+- Create `tests/browser.test.js`: 页面、交互、PWA 和无障碍的真实浏览器测试。
 - Create `tests/app-state.test.js`: 输入解析和汇率存储行为测试。
-- Create `tests/pwa-contract.test.js`: Service Worker 本地资源与更新策略契约测试。
 - Modify `index.html`: 删除杂费、IVA、Tailwind CDN和禁止缩放配置，换成语义化结构。
 - Modify `style.css`: 完整本地布局、视觉样式、错误状态和无障碍状态。
 - Rewrite `script.js`: DOM 控制器、输入状态、汇率持久化、渲染和复制反馈。
@@ -264,7 +277,8 @@ git commit -m "refactor: extract pricing calculation core"
 ### Task 2: Simplify and Localize the Page
 
 **Files:**
-- Create: `tests/markup.test.js`
+- Create: `tests/browser-helpers.js`
+- Create: `tests/browser.test.js`
 - Modify: `index.html`
 - Modify: `style.css`
 
@@ -272,7 +286,9 @@ git commit -m "refactor: extract pricing calculation core"
 - Consumes: DOM IDs expected by the Task 3 controller.
 - Produces: `rateInput`, `factoryPriceInput`, `targetPriceInput`, `priceRows`, `exchangeHint`, `reverseResult`, `reverseMargin`, `reverseProfitRmb`, `copyStatus`, `rateError`, `factoryPriceError`, `targetPriceError`, and buttons with `data-currency`.
 
-- [ ] **Step 1: Write failing markup contract tests**
+- [ ] **Step 1: Install browser-test drivers and write failing browser behavior tests**
+
+This step uses the replacement tests defined in “Execution Correction: Behavior-First Browser Tests”; do not create the source-string `tests/markup.test.js` shown below.
 
 Create `tests/markup.test.js`:
 
@@ -305,11 +321,11 @@ test('uses local focus and screen-reader styles', () => {
 });
 ```
 
-- [ ] **Step 2: Run the markup tests and verify they fail on the current page**
+- [ ] **Step 2: Run the page behavior tests and verify they fail on the current page**
 
-Run: `node --test tests/markup.test.js`
+Run: `node --test tests/browser.test.js`
 
-Expected: FAIL because the current page contains Tailwind CDN, IVA, `extraInput`, disabled zoom, missing label associations, and no module script.
+Expected: FAIL because the running page requests Tailwind CDN, renders IVA and `extraInput`, disables zoom, lacks label associations, and removes visible input focus.
 
 - [ ] **Step 3: Rewrite the HTML around the simplified flow**
 
@@ -448,7 +464,7 @@ Expected: all calculator and markup tests PASS.
 - [ ] **Step 6: Commit the simplified local page**
 
 ```bash
-git add index.html style.css tests/markup.test.js
+git add index.html style.css package.json package-lock.json tests/browser-helpers.js tests/browser.test.js
 git commit -m "refactor: simplify pricing interface"
 ```
 
@@ -759,7 +775,7 @@ git commit -m "feat: validate pricing inputs and persist rate"
 ### Task 4: Repair the PWA Cache and Manifest
 
 **Files:**
-- Create: `tests/pwa-contract.test.js`
+- Modify: `tests/browser.test.js`
 - Rewrite: `sw.js`
 - Modify: `manifest.json`
 
@@ -767,7 +783,9 @@ git commit -m "feat: validate pricing inputs and persist rate"
 - Consumes: local paths `./`, `./index.html`, `./style.css`, `./calculator.js`, `./script.js`, `./manifest.json`, `./icon.png`.
 - Produces: cache `price-tool-v4`; successful same-origin offline fallback; manifest icon declaration `1024x1024`.
 
-- [ ] **Step 1: Write failing Service Worker contract tests**
+- [ ] **Step 1: Write failing Service Worker behavior tests**
+
+Append the Task 4 Service Worker, cache, manifest, and offline scenarios from “Execution Correction: Behavior-First Browser Tests” to `tests/browser.test.js`; do not create the source-string `tests/pwa-contract.test.js` shown below.
 
 Create `tests/pwa-contract.test.js`:
 
@@ -806,11 +824,11 @@ test('manifest declares the actual source icon size and matching theme', () => {
 });
 ```
 
-- [ ] **Step 2: Run the PWA contract tests and verify they fail**
+- [ ] **Step 2: Run the PWA browser tests and verify they fail**
 
-Run: `node --test tests/pwa-contract.test.js`
+Run: `node --test --test-name-pattern="PWA" tests/browser.test.js`
 
-Expected: FAIL because the old worker contains the Tailwind CDN, omits cleanup and local assets, and the manifest declares incorrect sizes/theme.
+Expected: FAIL because the current worker never becomes ready and the offline application cannot reload.
 
 - [ ] **Step 3: Implement the local network-first Service Worker**
 
@@ -907,7 +925,7 @@ Expected: an active worker and only `price-tool-v4` among `price-tool-*` caches.
 - [ ] **Step 7: Commit the PWA repair**
 
 ```bash
-git add sw.js manifest.json tests/pwa-contract.test.js
+git add sw.js manifest.json tests/browser.test.js
 git commit -m "fix: make pricing app reliably available offline"
 ```
 

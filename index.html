@@ -1,117 +1,119 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Pricing Pro</title>
-  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>跨境定价助手</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#F2F2F7"> <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#F2F2F7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="style.css?v=3.0" />
 </head>
-<body class="min-h-screen p-5 font-sans">
-  
-  <div class="max-w-md mx-auto space-y-6">
-    
-    <h1 class="text-2xl text-center pt-6">定价</h1>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <p class="eyebrow">Pricing Pro</p>
+      <h1>定价</h1>
+      <p class="subtitle">手动汇率 · 出厂价 · 毛利阶梯</p>
+    </header>
 
-    <div class="ios-card p-6 space-y-5 relative">
-      
-      <div>
-        <label>汇率 (1 RMB = ? CLP)</label>
-        <input id="rateInput" type="number" inputmode="decimal" step="0.01" placeholder="135" />
+    <section class="card input-card" aria-labelledby="pricingInputsTitle">
+      <h2 id="pricingInputsTitle" class="sr-only">定价输入</h2>
+
+      <div class="field">
+        <label for="rateInput">汇率（1 RMB = ? CLP）</label>
+        <input
+          id="rateInput"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="0.01"
+          placeholder="例如 135"
+          aria-describedby="rateError"
+        >
+        <p id="rateError" class="field-error" aria-live="polite"></p>
       </div>
 
-      <div>
-        <label>成本币种</label>
+      <fieldset class="field currency-field">
+        <legend>出厂价币种</legend>
         <div class="currency-toggle">
-          <button class="active" data-currency="RMB">RMB</button>
-          <button data-currency="CLP">CLP</button>
+          <button type="button" class="active" data-currency="RMB" aria-pressed="true">RMB</button>
+          <button type="button" data-currency="CLP" aria-pressed="false">CLP</button>
         </div>
+      </fieldset>
+
+      <div class="field">
+        <label id="factoryPriceLabel" for="factoryPriceInput">出厂价（RMB）</label>
+        <input
+          id="factoryPriceInput"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="0.01"
+          placeholder="0"
+          aria-describedby="factoryPriceError"
+        >
+        <p id="factoryPriceError" class="field-error" aria-live="polite"></p>
       </div>
+    </section>
 
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label>商品成本</label>
-          <input id="costInput" type="number" inputmode="decimal" placeholder="0" />
-        </div>
-        <div>
-          <label>额外杂费</label>
-          <input id="extraInput" type="number" inputmode="decimal" placeholder="0" />
-        </div>
-      </div>
+    <p id="exchangeHint" class="exchange-hint">当前汇率：未设置</p>
 
-      <div class="flex items-center justify-between pt-2">
-        <span class="text-sm font-medium text-gray-900">含 19% IVA</span>
-        <label class="switch">
-          <input type="checkbox" id="taxToggle" checked>
-          <span class="slider"></span>
-        </label>
-      </div>
-    </div>
-
-    <div class="exchange-hint text-xs text-gray-400 text-center font-medium">
-      当前汇率：未设置
-    </div>
-
-    <div class="ios-card">
-      <div class="overflow-x-auto">
+    <section class="card price-card" aria-labelledby="priceTableTitle">
+      <h2 id="priceTableTitle" class="sr-only">售价策略</h2>
+      <div class="table-scroll">
         <table>
           <thead>
             <tr>
-              <th class="pl-6">策略</th>
-              <th>CLP</th>
-              <th>RMB</th>
-              <th class="w-10"></th>
+              <th scope="col">策略</th>
+              <th scope="col">CLP</th>
+              <th scope="col">RMB</th>
+              <th scope="col"><span class="sr-only">复制售价</span></th>
             </tr>
           </thead>
           <tbody id="priceRows"></tbody>
         </table>
       </div>
-    </div>
+      <p id="copyStatus" class="status-message" aria-live="polite"></p>
+    </section>
 
-    <div class="widget-dark">
-      <h2 class="flex items-center gap-2 text-white font-bold text-lg">
-        
-        <span>反推利润</span>
-      </h2>
-      
-      <div class="space-y-4">
-        <div>
-          <label>市场预期售价 (CLP)</label>
-          <input id="targetPriceInput" type="number" inputmode="decimal" placeholder="输入价格..." />
-        </div>
-
-        <div id="reverseResult" class="hidden p-4 space-y-2">
-          <div class="flex justify-between items-end">
-            <span class="text-gray-400 text-sm">预估毛利率</span>
-            <span id="revMargin" class="text-2xl font-bold">--%</span>
-          </div>
-          <div class="flex justify-between items-center text-sm">
-            <span class="text-gray-400">净利润 (RMB)</span>
-            <span id="revProfitRMB" class="font-mono text-white">--</span>
-          </div>
-          <div class="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-600" id="revTaxHint">
-            *计算结果说明
-          </div>
-        </div>
+    <section class="reverse-card" aria-labelledby="reverseTitle">
+      <div class="reverse-heading">
+        <p class="eyebrow eyebrow-dark">Market Check</p>
+        <h2 id="reverseTitle">反推毛利</h2>
       </div>
-    </div>
 
-    <div class="text-center text-xs text-gray-400 pb-8 pt-2 opacity-60">
-      Designed by You
-    </div>
-  </div>
+      <div class="field">
+        <label for="targetPriceInput">市场预期售价（CLP）</label>
+        <input
+          id="targetPriceInput"
+          type="number"
+          inputmode="decimal"
+          min="0"
+          step="10"
+          placeholder="输入价格"
+          aria-describedby="targetPriceError"
+        >
+        <p id="targetPriceError" class="field-error field-error-dark" aria-live="polite"></p>
+      </div>
 
-  <script src="script.js"></script>
-  
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(console.error);
-    }
-  </script>
+      <div id="reverseResult" class="reverse-result" hidden>
+        <p>
+          <span>预估毛利率</span>
+          <strong id="reverseMargin">--%</strong>
+        </p>
+        <p>
+          <span>预估毛利（RMB）</span>
+          <strong id="reverseProfitRmb">--</strong>
+        </p>
+      </div>
+    </section>
+
+    <footer class="app-footer">Designed by You</footer>
+  </main>
+
+  <script type="module" src="script.js"></script>
 </body>
 </html>

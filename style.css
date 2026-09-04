@@ -1,196 +1,439 @@
-/* style.css */
 :root {
-  --ios-bg: #F2F2F7;
-  --ios-card-bg: rgba(255, 255, 255, 0.8);
-  --ios-text-primary: #000000;
-  --ios-text-secondary: #8E8E93;
-  --ios-blue: #007AFF;
-  --ios-green: #34C759;
-  --ios-input-bg: #EBEBF0;
-  --ios-border: #C6C6C8;
+  --page-bg: #f2f2f7;
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --text: #111114;
+  --muted: #5f636d;
+  --border: #c6c6c8;
+  --input-bg: #ebebf0;
+  --accent: #006ee6;
+  --success: #137a39;
+  --danger: #b42318;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--page-bg);
 }
 
 body {
-  background-color: var(--ios-bg);
-  color: var(--ios-text-primary);
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 50% -10%, rgba(255, 255, 255, 0.95), transparent 34%),
+    var(--page-bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* --- iOS 风格卡片 --- */
-.ios-card {
-  background-color: var(--ios-card-bg);
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #73adf2;
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.app-shell {
+  display: grid;
+  width: min(100% - 32px, 440px);
+  margin: 0 auto;
+  padding: max(28px, env(safe-area-inset-top)) 0 max(40px, env(safe-area-inset-bottom));
+  gap: 20px;
+}
+
+.app-header {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  padding: 8px 0 2px;
+  text-align: center;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+}
+
+.eyebrow,
+.subtitle {
+  margin: 0;
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.card,
+.reverse-card {
+  border-radius: 22px;
+}
+
+.card {
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  background: var(--card-bg);
+  box-shadow: 0 8px 28px rgba(30, 31, 35, 0.07);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
-/* --- 深色小组件 (用于反推) --- */
-.widget-dark {
-  background: linear-gradient(145deg, #2C2C2E, #1C1C1E);
-  color: white;
-  border-radius: 22px;
+.input-card {
+  display: grid;
   padding: 24px;
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 20px;
 }
 
-/* --- 表单元素通用样式 --- */
-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ios-text-secondary);
-  margin-bottom: 8px;
-  letter-spacing: -0.3px;
-}
-
-/* =========================================
-   👇 核心修改区域：输入框样式
-========================================= */
-/* 1. 针对所有输入框的通用设置 */
-.ios-card input,
-.widget-dark input {
-  width: 100%;
-  padding: 14px 24px;
-  border-radius: 16px;
-  border: none;
-  font-size: 17px;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-sizing: border-box;
+.field {
+  display: grid;
   min-width: 0;
-  text-align: left;
+  gap: 8px;
+}
 
-  /* 关键：移除 iOS 默认外观 */
-  -webkit-appearance: none;
+.field label,
+.field legend {
+  padding: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.field input {
+  width: 100%;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  appearance: textfield;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 17px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.field input:hover {
+  border-color: #d1d1d8;
+}
+
+.field input[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button {
+  margin: 0;
   appearance: none;
-  /* 关键：移除 Firefox 的数字微调按钮 */
-  -moz-appearance: textfield;
 }
 
-/* 2. 分别设置白色卡片和深色组件里的输入框背景色 */
-.ios-card input {
-  background-color: var(--ios-input-bg);
-  color: var(--ios-text-primary);
+.currency-field {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
-.widget-dark input {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-.widget-dark input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
-}
-
-/* 3. 🚫 移除所有聚焦时的高亮和变色效果 */
-.ios-card input:focus,
-.widget-dark input:focus {
-  outline: none; /* 移除蓝色边框 */
-  box-shadow: none; /* 移除阴影 */
-  /* 背景色保持不变，不做任何修改 */
-}
-
-/* 4. 🚫 彻底隐藏 WebKit 浏览器 (Chrome, Safari) 的数字微调按钮 */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0; /* 确保没有残留边距 */
-}
-
-/* --- 货币切换按钮 --- */
 .currency-toggle {
-  display: flex;
-  background-color: var(--ios-input-bg);
-  border-radius: 12px;
-  padding: 3px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 13px;
+  background: var(--input-bg);
 }
 
 .currency-toggle button {
-  flex: 1;
-  padding: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
   font-size: 14px;
-  font-weight: 600;
-  border-radius: 9px;
-  border: none;
-  background-color: transparent;
-  color: var(--ios-text-secondary);
-  transition: all 0.2s ease;
+  font-weight: 750;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
 
 .currency-toggle button.active {
-  background-color: white;
-  color: var(--ios-text-primary);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.12);
 }
 
-/* --- iOS 开关 (Toggle) --- */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 52px;
-  height: 32px;
-}
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: var(--ios-input-bg);
-  transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 32px;
-}
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 24px; width: 24px;
-  left: 4px; bottom: 4px;
-  background-color: white;
-  transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 50%;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-input:checked + .slider {
-  background-color: var(--ios-green);
-}
-input:checked + .slider:before {
-  transform: translateX(20px);
+.field-error {
+  min-height: 0;
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 1.35;
 }
 
-/* --- 表格样式 --- */
+.field-error:empty {
+  display: none;
+}
+
+.exchange-hint,
+.status-message {
+  min-height: 18px;
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.price-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
 table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  min-width: 360px;
+  border-collapse: collapse;
 }
-th {
+
+th,
+td {
+  padding: 14px 9px;
+  border-bottom: 1px solid var(--border);
   text-align: left;
-  padding: 14px 8px 14px 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ios-text-secondary);
-  border-bottom: 1px solid var(--ios-border);
   white-space: nowrap;
 }
-td {
-  padding: 16px 8px 16px 0;
-  vertical-align: middle;
-  border-bottom: 1px solid var(--ios-border);
+
+th:first-child,
+td:first-child {
+  padding-left: 20px;
 }
-tr:last-child td {
-  border-bottom: none;
+
+th:last-child,
+td:last-child {
+  width: 64px;
+  padding-right: 14px;
+  text-align: right;
 }
-.copy-btn {
-  cursor: pointer;
-  padding: 6px;
-  margin: -6px;
-  border-radius: 8px;
+
+th {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
 }
-.copy-btn:hover {
-  background-color: rgba(0, 0, 0, 0.03);
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.factory-row {
+  background: #fff1f0;
+  color: var(--danger);
+}
+
+.factory-row .price-rmb {
+  color: #71332d;
+}
+
+.price-clp {
+  font-weight: 780;
+  font-variant-numeric: tabular-nums;
+}
+
+.price-rmb {
+  color: var(--muted);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.copy-button {
+  display: inline-grid;
+  min-width: 48px;
+  min-height: 36px;
+  place-items: center;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.copy-button:hover {
+  background: rgba(0, 110, 230, 0.08);
+  color: var(--accent);
+}
+
+.copy-button[data-copied="true"] {
+  color: var(--success);
+}
+
+.status-message {
+  min-height: 0;
+  padding: 0 20px;
+  color: var(--success);
+}
+
+.status-message:not(:empty) {
+  min-height: 40px;
+  padding-block: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.status-message[data-state="error"] {
+  color: var(--danger);
+}
+
+.reverse-card {
+  display: grid;
+  padding: 24px;
+  gap: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(145deg, #2c2c2e, #1c1c1e);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.reverse-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.reverse-heading h2 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.eyebrow-dark {
+  color: #8fc2ff;
+}
+
+.reverse-card .field label {
+  color: #d1d1d6;
+}
+
+.reverse-card .field input {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.reverse-card .field input::placeholder {
+  color: #b5b5ba;
+}
+
+.field-error-dark {
+  color: #ffb4ae;
+}
+
+.reverse-result {
+  padding-top: 2px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.reverse-result p {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 14px 0 0;
+}
+
+.reverse-result span {
+  color: #d1d1d6;
+  font-size: 14px;
+}
+
+.reverse-result strong {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+#reverseMargin {
+  font-size: 27px;
+}
+
+.margin-low {
+  color: #ffb4ae;
+}
+
+.margin-medium {
+  color: #ffe45e;
+}
+
+.margin-high {
+  color: #71e087;
+}
+
+.app-footer {
+  color: var(--muted);
+  text-align: center;
+  font-size: 12px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 380px) {
+  .app-shell {
+    width: min(100% - 20px, 440px);
+  }
+
+  .input-card,
+  .reverse-card {
+    padding: 20px;
+  }
+
+  th,
+  td {
+    padding-inline: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

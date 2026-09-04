@@ -18,6 +18,7 @@ test('input parsing distinguishes empty, invalid, and positive values', () => {
     assert.deepEqual(parsePositiveInput(raw), { state: 'invalid' });
   }
   assert.deepEqual(parsePositiveInput('135.5'), { state: 'valid', value: 135.5 });
+  assert.deepEqual(parsePositiveInput('12,5'), { state: 'valid', value: 12.5 });
 });
 
 test('rate persistence stores valid values, ignores invalid values, and clears empty input', () => {

@@ -140,6 +140,26 @@ test('CLP currency state changes the unit without rewriting the factory price', 
   await context.close();
 });
 
+test('factory price accepts a decimal comma from a localized mobile keyboard', async () => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    locale: 'es-CL',
+    serviceWorkers: 'block',
+  });
+  const page = await context.newPage();
+  await page.goto(server.baseUrl, { waitUntil: 'networkidle' });
+  await page.locator('#rateInput').fill('195');
+  await page.locator('#factoryPriceInput').pressSequentially('12,5');
+
+  assert.equal(await page.locator('#factoryPriceInput').inputValue(), '12,5');
+  assert.equal(await page.locator('#factoryPriceError').textContent(), '');
+  assert.match(
+    await page.locator('#priceList .price-row').first().innerText(),
+    /入库价.*2\.438 CLP.*12\.50 RMB/s,
+  );
+  await context.close();
+});
+
 test('invalid values clear stale results and show field errors', async () => {
   const { context, page } = await openPage();
   assert.equal(await page.locator('#factoryPriceInput').count(), 1);

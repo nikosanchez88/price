@@ -16,7 +16,7 @@ export function parsePositiveInput(rawValue) {
   if (typeof rawValue !== 'string' || rawValue.trim() === '') {
     return { state: 'empty' };
   }
-  const value = Number(rawValue);
+  const value = Number(rawValue.trim().replace(',', '.'));
   return Number.isFinite(value) && value > 0
     ? { state: 'valid', value }
     : { state: 'invalid' };

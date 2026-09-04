@@ -23,6 +23,17 @@ test('positive-number validation rejects zero, negatives, non-numbers, and infin
 test('CLP sale prices round upward to the next 10', () => {
   assert.equal(roundUpClp(1204.875), 1210);
   assert.equal(roundUpClp(18750), 18750);
+  assert.equal(roundUpClp(1200.000001), 1210);
+});
+
+test('floating-point noise does not add 10 CLP to exact high-margin prices', () => {
+  const rows = calculatePriceRows({
+    factoryPrice: 100,
+    currency: 'RMB',
+    rate: 135,
+    margins: [0.8, 0.9],
+  });
+  assert.deepEqual(rows.map((row) => row.clp), [67500, 135000]);
 });
 
 test('factory-price conversion does not apply sale-price rounding', () => {

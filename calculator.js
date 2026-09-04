@@ -21,7 +21,8 @@ export function roundUpClp(value) {
   if (!isPositiveFinite(value)) {
     throw new RangeError('CLP value must be a finite positive number');
   }
-  return Math.ceil(value / 10) * 10;
+  const floatingPointTolerance = Number.EPSILON * Math.max(1, Math.abs(value)) * 8;
+  return Math.ceil((value - floatingPointTolerance) / 10) * 10;
 }
 
 function validateCommon({ factoryPrice, currency, rate }) {

@@ -288,8 +288,8 @@ test('PWA activates a local app-shell cache and reloads offline', async () => {
       }
       return { cacheNames, entries };
     });
-    assert.deepEqual(cacheState.cacheNames, ['price-tool-v4']);
-    assert.deepEqual(cacheState.entries['price-tool-v4'], [
+    assert.deepEqual(cacheState.cacheNames, ['price-tool-v5']);
+    assert.deepEqual(cacheState.entries['price-tool-v5'], [
       `${server.baseUrl}/`,
       `${server.baseUrl}/calculator.js`,
       `${server.baseUrl}/icon.png`,

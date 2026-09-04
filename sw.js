@@ -1,4 +1,4 @@
-const CACHE_NAME = 'price-tool-v4';
+const CACHE_NAME = 'price-tool-v5';
 const CACHE_PREFIX = 'price-tool-';
 const APP_SHELL = [
   './',

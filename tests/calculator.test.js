@@ -8,9 +8,10 @@ import {
   calculateReverseMargin,
 } from '../calculator.js';
 
-test('the default calculation returns the retained margin ladder', () => {
+test('the default calculation returns the 10% through 90% margin ladder', () => {
   const rows = calculatePriceRows({ factoryPrice: 100, currency: 'RMB', rate: 135 });
-  assert.deepEqual(rows.map((row) => row.margin), [0.2, 0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.8, 0.9]);
+  assert.deepEqual(rows.map((row) => row.margin), [0.1, 0.2, 0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.8, 0.9]);
+  assert.deepEqual(rows[0], { margin: 0.1, clp: 15000, rmb: 111.11111111111111 });
 });
 
 test('positive-number validation rejects zero, negatives, non-numbers, and infinities', () => {

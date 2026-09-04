@@ -79,6 +79,18 @@ test('keyboard focus is visibly indicated on inputs', async () => {
   await context.close();
 });
 
+test('the input remains factory price while the converted row is labeled landed price', async () => {
+  const { context, page } = await openPage();
+  await page.locator('#rateInput').fill('135');
+  await page.locator('#factoryPriceInput').fill('100');
+  assert.equal(await page.locator('#factoryPriceLabel').textContent(), '出厂价（RMB）');
+  assert.equal(
+    await page.locator('#priceRows tr').first().locator('td').first().textContent(),
+    '入库价',
+  );
+  await context.close();
+});
+
 test('RMB pricing and reverse margin use the simplified no-IVA formula', async () => {
   const { context, page } = await openPage();
   assert.equal(await page.locator('#factoryPriceInput').count(), 1);

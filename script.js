@@ -149,7 +149,7 @@ function initializeApp() {
     if (rate.state !== 'valid' || factoryPrice.state !== 'valid') return;
 
     appendPriceRow(
-      '出厂价',
+      '入库价',
       convertFactoryPrice({
         factoryPrice: factoryPrice.value,
         currency: currentCurrency,

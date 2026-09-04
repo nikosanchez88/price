@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 import { launchBrowser, startStaticServer } from './browser-helpers.js';
+
+const AXE_PATH = fileURLToPath(new URL('../node_modules/axe-core/axe.min.js', import.meta.url));
 
 let browser;
 let server;
@@ -225,4 +228,31 @@ test('PWA activates a local app-shell cache and reloads offline', async () => {
     await context.close();
     await pwaBrowser.close();
   }
+});
+
+test('the complete mobile view has no serious WCAG A or AA violations', async () => {
+  const { context, page } = await openPage();
+  await page.locator('#rateInput').fill('135');
+  await page.locator('#factoryPriceInput').fill('100');
+  await page.locator('#targetPriceInput').fill('16875');
+  await page.addScriptTag({ path: AXE_PATH });
+
+  const violations = await page.evaluate(async () => {
+    const result = await axe.run(document, {
+      runOnly: {
+        type: 'tag',
+        values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'],
+      },
+    });
+    return result.violations
+      .filter((violation) => ['serious', 'critical'].includes(violation.impact))
+      .map((violation) => ({
+        id: violation.id,
+        impact: violation.impact,
+        targets: violation.nodes.map((node) => node.target),
+      }));
+  });
+
+  assert.deepEqual(violations, []);
+  await context.close();
 });

@@ -28,6 +28,14 @@ async function openPage() {
   return { context, page };
 }
 
+async function assertNoHorizontalOverflow(page) {
+  const dimensions = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    document: document.documentElement.scrollWidth,
+  }));
+  assert.equal(dimensions.document, dimensions.viewport);
+}
+
 test('the application loads without third-party runtime requests', async () => {
   const context = await browser.newContext({ serviceWorkers: 'block' });
   const page = await context.newPage();
@@ -209,6 +217,43 @@ test('reverse margin is collapsed by default and calculates after expansion', as
   assert.equal(await page.locator('#reverseProfitRmb').textContent(), '25.00');
   assert.equal(await page.locator('#reverseAssessment').textContent(), '常规');
   await context.close();
+});
+
+test('the Apple-style layout remains touchable without horizontal overflow', async () => {
+  for (const width of [320, 390, 430]) {
+    const context = await browser.newContext({
+      viewport: { width, height: 844 },
+      serviceWorkers: 'block',
+    });
+    const page = await context.newPage();
+    await page.goto(server.baseUrl, { waitUntil: 'networkidle' });
+    await page.locator('#rateInput').fill('195');
+    await page.locator('#factoryPriceInput').fill('100');
+    await assertNoHorizontalOverflow(page);
+
+    const metrics = await page.locator('.price-action').first().evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        height: element.getBoundingClientRect().height,
+        background: style.backgroundColor,
+      };
+    });
+    assert.ok(metrics.height >= 44);
+    assert.equal(metrics.background, 'rgb(255, 255, 255)');
+    assert.equal(
+      await page.locator('.copy-icon').first().evaluate((element) => getComputedStyle(element).color),
+      'rgb(0, 122, 255)',
+    );
+    assert.notEqual(
+      await page.locator('.landed-row').evaluate((element) => getComputedStyle(element).color),
+      'rgb(215, 0, 21)',
+    );
+    assert.equal(
+      await page.locator('#costSummary').evaluate((element) => getComputedStyle(element).position),
+      'sticky',
+    );
+    await context.close();
+  }
 });
 
 test('PWA activates a local app-shell cache and reloads offline', async () => {

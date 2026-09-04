@@ -77,8 +77,10 @@ function initializeApp() {
     rateError: document.querySelector('#rateError'),
     factoryPriceError: document.querySelector('#factoryPriceError'),
     targetPriceError: document.querySelector('#targetPriceError'),
-    exchangeHint: document.querySelector('#exchangeHint'),
-    priceRows: document.querySelector('#priceRows'),
+    priceList: document.querySelector('#priceList'),
+    costSummary: document.querySelector('#costSummary'),
+    costContext: document.querySelector('#costContext'),
+    landedPriceSummary: document.querySelector('#landedPriceSummary'),
     copyStatus: document.querySelector('#copyStatus'),
     reverseResult: document.querySelector('#reverseResult'),
     reverseMargin: document.querySelector('#reverseMargin'),
@@ -96,37 +98,42 @@ function initializeApp() {
     }
   }
 
-  function appendCell(row, text, className = '') {
-    const cell = document.createElement('td');
-    cell.textContent = text;
-    if (className) cell.className = className;
-    row.append(cell);
-    return cell;
+  function appendPriceText(container, label, { clp, rmb }) {
+    const labelElement = document.createElement('span');
+    labelElement.className = 'row-label';
+    labelElement.textContent = label;
+
+    const amounts = document.createElement('span');
+    amounts.className = 'row-amounts';
+    const clpElement = document.createElement('strong');
+    clpElement.textContent = `${fmtClp.format(clp)} CLP`;
+    const rmbElement = document.createElement('small');
+    rmbElement.textContent = `${fmtRmb.format(rmb)} RMB`;
+    amounts.append(clpElement, rmbElement);
+    container.append(labelElement, amounts);
   }
 
-  function appendPriceRow(label, { clp, rmb }, { className = '', copyable = true } = {}) {
-    const row = document.createElement('tr');
-    if (className) row.className = className;
-    appendCell(row, label);
-    appendCell(row, fmtClp.format(clp), 'price-clp');
-    appendCell(row, fmtRmb.format(rmb), 'price-rmb');
-    const actionCell = appendCell(row, '');
+  function appendLandedRow(values) {
+    const row = document.createElement('div');
+    row.className = 'price-row landed-row';
+    appendPriceText(row, '入库价', values);
+    elements.priceList.append(row);
+  }
 
-    if (copyable) {
-      const copyButton = document.createElement('button');
-      const copyText = `${fmtClp.format(clp)} CLP`;
-      copyButton.type = 'button';
-      copyButton.className = 'copy-button';
-      copyButton.dataset.copied = 'false';
-      copyButton.setAttribute('aria-label', `复制 ${copyText} 售价`);
-      copyButton.textContent = '复制';
-      copyButton.addEventListener('click', () => {
-        copyPrice(copyButton, copyText, elements.copyStatus);
-      });
-      actionCell.append(copyButton);
-    }
-
-    elements.priceRows.append(row);
+  function appendMarginRow(label, values) {
+    const row = document.createElement('div');
+    row.className = 'price-row margin-row';
+    appendPriceText(row, label, values);
+    const copyButton = document.createElement('button');
+    const copyText = `${fmtClp.format(values.clp)} CLP`;
+    copyButton.type = 'button';
+    copyButton.className = 'copy-button';
+    copyButton.dataset.copied = 'false';
+    copyButton.setAttribute('aria-label', `复制 ${copyText} 售价`);
+    copyButton.textContent = '复制';
+    copyButton.addEventListener('click', () => copyPrice(copyButton, copyText, elements.copyStatus));
+    row.append(copyButton);
+    elements.priceList.append(row);
   }
 
   function render() {
@@ -138,25 +145,27 @@ function initializeApp() {
     showValidation(elements.factoryPrice, elements.factoryPriceError, factoryPrice);
     showValidation(elements.targetPrice, elements.targetPriceError, targetPrice);
 
-    elements.exchangeHint.textContent = rate.state === 'valid'
-      ? `当前汇率：1 RMB = ${rate.value} CLP`
-      : '当前汇率：未设置';
-    elements.priceRows.replaceChildren();
+    elements.priceList.replaceChildren();
+    elements.costSummary.hidden = true;
+    elements.costContext.textContent = '';
+    elements.landedPriceSummary.textContent = '';
     elements.copyStatus.textContent = '';
     delete elements.copyStatus.dataset.state;
     elements.reverseResult.hidden = true;
 
     if (rate.state !== 'valid' || factoryPrice.state !== 'valid') return;
 
-    appendPriceRow(
-      '入库价',
-      convertFactoryPrice({
-        factoryPrice: factoryPrice.value,
-        currency: currentCurrency,
-        rate: rate.value,
-      }),
-      { className: 'factory-row', copyable: false },
-    );
+    const landedPrice = convertFactoryPrice({
+      factoryPrice: factoryPrice.value,
+      currency: currentCurrency,
+      rate: rate.value,
+    });
+    elements.costSummary.hidden = false;
+    elements.costContext.textContent = currentCurrency === 'RMB'
+      ? `${fmtRmb.format(factoryPrice.value)} RMB × ${rate.value}`
+      : `${fmtClp.format(factoryPrice.value)} CLP`;
+    elements.landedPriceSummary.textContent = `${fmtClp.format(landedPrice.clp)} CLP`;
+    appendLandedRow(landedPrice);
 
     const priceRows = calculatePriceRows({
       factoryPrice: factoryPrice.value,
@@ -165,7 +174,7 @@ function initializeApp() {
       margins: MARGINS,
     });
     for (const row of priceRows) {
-      appendPriceRow(`毛利 ${Math.round(row.margin * 100)}%`, row);
+      appendMarginRow(`毛利 ${Math.round(row.margin * 100)}%`, row);
     }
 
     if (targetPrice.state !== 'valid') return;

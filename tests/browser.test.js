@@ -59,7 +59,7 @@ test('the rendered form contains only labeled controls from the simplified scope
   await context.close();
 });
 
-test('keyboard focus is visibly indicated on inputs', async () => {
+test('keyboard focus is visibly indicated on the first control', async () => {
   const { context, page } = await openPage();
   await page.keyboard.press('Tab');
 
@@ -67,27 +67,34 @@ test('keyboard focus is visibly indicated on inputs', async () => {
     const element = document.activeElement;
     const style = getComputedStyle(element);
     return {
-      id: element.id,
+      currency: element.dataset.currency,
       outlineStyle: style.outlineStyle,
       outlineWidth: style.outlineWidth,
     };
   });
 
-  assert.equal(focus.id, 'rateInput');
+  assert.equal(focus.currency, 'RMB');
   assert.notEqual(focus.outlineStyle, 'none');
   assert.notEqual(focus.outlineWidth, '0px');
   await context.close();
 });
 
-test('the input remains factory price while the converted row is labeled landed price', async () => {
+test('the mobile price list keeps factory input and shows the complete landed-cost ladder', async () => {
   const { context, page } = await openPage();
   await page.locator('#rateInput').fill('135');
   await page.locator('#factoryPriceInput').fill('100');
+
   assert.equal(await page.locator('#factoryPriceLabel').textContent(), '出厂价（RMB）');
-  assert.equal(
-    await page.locator('#priceRows tr').first().locator('td').first().textContent(),
-    '入库价',
-  );
+  assert.equal(await page.locator('table').count(), 0);
+  assert.equal(await page.locator('#costSummary').isHidden(), false);
+  assert.match(await page.locator('#costContext').textContent(), /100.*135/);
+  assert.equal(await page.locator('#landedPriceSummary').textContent(), '13.500 CLP');
+
+  const rows = page.locator('#priceList .price-row');
+  assert.equal(await rows.count(), 12);
+  assert.match(await rows.first().innerText(), /入库价.*13\.500.*100\.00 RMB/s);
+  assert.match(await rows.nth(1).innerText(), /毛利 10%.*15\.000.*111\.11 RMB/s);
+  assert.match(await rows.last().innerText(), /毛利 90%.*135\.000.*1,000\.00 RMB/s);
   await context.close();
 });
 
@@ -97,12 +104,13 @@ test('RMB pricing and reverse margin use the simplified no-IVA formula', async (
 
   await page.locator('#rateInput').fill('135');
   await page.locator('#factoryPriceInput').fill('100');
-  const rows = await page.locator('#priceRows tr').allTextContents();
-  assert.equal(rows.length, 11);
-  assert.match(rows[1], /毛利 20%/);
-  assert.match(rows[1], /16\.880/);
-  assert.match(rows[1], /125\.04/);
+  const rows = await page.locator('#priceList .price-row').allTextContents();
+  assert.equal(rows.length, 12);
+  assert.match(rows[2], /毛利 20%/);
+  assert.match(rows[2], /16\.880/);
+  assert.match(rows[2], /125\.04/);
 
+  await page.locator('#reverseDisclosure summary').click();
   await page.locator('#targetPriceInput').fill('16875');
   assert.equal(await page.locator('#reverseMargin').textContent(), '20.0%');
   assert.equal(await page.locator('#reverseProfitRmb').textContent(), '25.00');
@@ -120,7 +128,7 @@ test('CLP currency state changes the unit without rewriting the factory price', 
   assert.equal(await page.locator('#factoryPriceLabel').textContent(), '出厂价（CLP）');
   assert.equal(await page.locator('button[data-currency="CLP"]').getAttribute('aria-pressed'), 'true');
   assert.equal(await page.locator('button[data-currency="RMB"]').getAttribute('aria-pressed'), 'false');
-  assert.match((await page.locator('#priceRows tr').nth(1).innerText()), /18\.750/);
+  assert.match((await page.locator('#priceList .price-row').nth(2).innerText()), /18\.750/);
   await context.close();
 });
 
@@ -130,12 +138,12 @@ test('invalid values clear stale results and show field errors', async () => {
 
   await page.locator('#rateInput').fill('135');
   await page.locator('#factoryPriceInput').fill('100');
-  assert.equal(await page.locator('#priceRows tr').count(), 11);
+  assert.equal(await page.locator('#priceList .price-row').count(), 12);
   await page.locator('#rateInput').fill('-135');
-  assert.equal(await page.locator('#priceRows tr').count(), 0);
+  assert.equal(await page.locator('#priceList .price-row').count(), 0);
   assert.equal(await page.locator('#rateError').textContent(), '请输入大于 0 的有效数字');
   assert.equal(await page.locator('#rateInput').getAttribute('aria-invalid'), 'true');
-  assert.equal(await page.locator('#exchangeHint').textContent(), '当前汇率：未设置');
+  assert.equal(await page.locator('#costSummary').isHidden(), true);
   await context.close();
 });
 
@@ -149,7 +157,7 @@ test('a manually entered rate is restored until the user clears it', async () =>
   await page.locator('#rateInput').fill('');
   await page.reload({ waitUntil: 'networkidle' });
   assert.equal(await page.locator('#rateInput').inputValue(), '');
-  assert.equal(await page.locator('#exchangeHint').textContent(), '当前汇率：未设置');
+  assert.equal(await page.locator('#costSummary').isHidden(), true);
   await context.close();
 });
 
@@ -235,7 +243,7 @@ test('PWA activates a local app-shell cache and reloads offline', async () => {
     assert.equal(await page.locator('h1').textContent(), '定价');
     await page.locator('#rateInput').fill('135');
     await page.locator('#factoryPriceInput').fill('100');
-    assert.match(await page.locator('#priceRows tr').nth(1).innerText(), /16\.880/);
+    assert.match(await page.locator('#priceList .price-row').nth(2).innerText(), /16\.880/);
   } finally {
     await context.close();
     await pwaBrowser.close();
@@ -246,6 +254,7 @@ test('the complete mobile view has no serious WCAG A or AA violations', async ()
   const { context, page } = await openPage();
   await page.locator('#rateInput').fill('135');
   await page.locator('#factoryPriceInput').fill('100');
+  await page.locator('#reverseDisclosure summary').click();
   await page.locator('#targetPriceInput').fill('16875');
   await page.addScriptTag({ path: AXE_PATH });
 

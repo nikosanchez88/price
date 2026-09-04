@@ -165,3 +165,64 @@ test('copy buttons report clipboard success and failure honestly', async () => {
   assert.equal(await page.locator('#copyStatus').textContent(), '复制失败，请手动复制');
   await context.close();
 });
+
+test('PWA activates a local app-shell cache and reloads offline', async () => {
+  const pwaBrowser = await launchBrowser();
+  const context = await pwaBrowser.newContext({ serviceWorkers: 'allow' });
+  const page = await context.newPage();
+
+  try {
+    await page.goto(server.baseUrl, { waitUntil: 'networkidle' });
+    const serviceWorkerState = await page.evaluate(async () => {
+      const registration = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, reject) => {
+          window.setTimeout(() => reject(new Error('Service Worker ready timeout')), 5000);
+        }),
+      ]);
+      return {
+        active: registration.active?.state,
+        scriptUrl: registration.active?.scriptURL,
+      };
+    });
+    assert.equal(serviceWorkerState.active, 'activated');
+    assert.equal(serviceWorkerState.scriptUrl, `${server.baseUrl}/sw.js`);
+
+    await page.reload({ waitUntil: 'networkidle' });
+    const cacheState = await page.evaluate(async () => {
+      const cacheNames = (await caches.keys()).filter((name) => name.startsWith('price-tool-'));
+      const entries = {};
+      for (const name of cacheNames) {
+        const cache = await caches.open(name);
+        entries[name] = (await cache.keys()).map((request) => request.url).sort();
+      }
+      return { cacheNames, entries };
+    });
+    assert.deepEqual(cacheState.cacheNames, ['price-tool-v4']);
+    assert.deepEqual(cacheState.entries['price-tool-v4'], [
+      `${server.baseUrl}/`,
+      `${server.baseUrl}/calculator.js`,
+      `${server.baseUrl}/icon.png`,
+      `${server.baseUrl}/index.html`,
+      `${server.baseUrl}/manifest.json`,
+      `${server.baseUrl}/script.js`,
+      `${server.baseUrl}/style.css`,
+    ].sort());
+
+    const manifest = await page.evaluate(() => fetch('./manifest.json').then((response) => response.json()));
+    assert.equal(manifest.theme_color.toLowerCase(), '#f2f2f7');
+    assert.deepEqual(manifest.icons, [
+      { src: 'icon.png', sizes: '1024x1024', type: 'image/png' },
+    ]);
+
+    await context.setOffline(true);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    assert.equal(await page.locator('h1').textContent(), '定价');
+    await page.locator('#rateInput').fill('135');
+    await page.locator('#factoryPriceInput').fill('100');
+    assert.match(await page.locator('#priceRows tr').nth(1).innerText(), /16\.880/);
+  } finally {
+    await context.close();
+    await pwaBrowser.close();
+  }
+});

@@ -252,6 +252,14 @@ test('the Apple-style layout remains touchable without horizontal overflow', asy
       await page.locator('#costSummary').evaluate((element) => getComputedStyle(element).position),
       'sticky',
     );
+    const controlMetrics = await page.evaluate(() => ({
+      currencyHeight: document.querySelector('.currency-toggle button').getBoundingClientRect().height,
+      inputFontSize: Number.parseFloat(getComputedStyle(document.querySelector('#rateInput')).fontSize),
+      priceUserSelect: getComputedStyle(document.querySelector('.price-action .row-amounts')).userSelect,
+    }));
+    assert.ok(controlMetrics.currencyHeight >= 44);
+    assert.ok(controlMetrics.inputFontSize >= 16);
+    assert.equal(controlMetrics.priceUserSelect, 'text');
     await context.close();
   }
 });

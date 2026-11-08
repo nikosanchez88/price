@@ -1,4 +1,4 @@
-const CACHE_NAME = 'price-tool-v5';
+const CACHE_NAME = 'price-tool-v6';
 const CACHE_PREFIX = 'price-tool-';
 const APP_SHELL = [
   './',
@@ -8,6 +8,7 @@ const APP_SHELL = [
   './script.js',
   './manifest.json',
   './icon.png',
+  './icon-192.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -35,21 +36,31 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
 
+  // Cache first: open instantly even on a weak signal, then refresh the cache
+  // in the background so the next launch picks up any new version.
+  const cachedResponse = caches.open(CACHE_NAME)
+    .then((cache) => cache.match(request, { ignoreSearch: request.mode === 'navigate' }));
+  const networkResponse = fetch(request).then(async (response) => {
+    if (response.ok && !response.redirected) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, response.clone());
+    }
+    return response;
+  });
+  event.waitUntil(networkResponse.catch(() => {}));
+
   event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          const updateCache = caches.open(CACHE_NAME)
-            .then((cache) => cache.put(request, response.clone()));
-          event.waitUntil(updateCache);
+    cachedResponse.then(async (cached) => {
+      if (cached) return cached;
+      try {
+        return await networkResponse;
+      } catch {
+        if (request.mode === 'navigate') {
+          const shell = await caches.match('./index.html');
+          if (shell) return shell;
         }
-        return response;
-      })
-      .catch(async () => {
-        const cached = await caches.match(request);
-        if (cached) return cached;
-        if (request.mode === 'navigate') return caches.match('./index.html');
         return Response.error();
-      }),
+      }
+    }),
   );
 });

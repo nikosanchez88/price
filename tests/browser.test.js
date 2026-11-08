@@ -160,6 +160,27 @@ test('factory price accepts a decimal comma from a localized mobile keyboard', a
   await context.close();
 });
 
+test('CLP fields read Chilean thousands separators instead of decimals', async () => {
+  const { context, page } = await openPage();
+  await page.locator('#rateInput').fill('135');
+  await page.locator('button[data-currency="CLP"]').click();
+  await page.locator('#factoryPriceInput').fill('13.500');
+  assert.equal(await page.locator('#factoryPriceError').textContent(), '');
+  assert.equal(await page.locator('#landedPriceSummary').textContent(), '13.500 CLP');
+
+  await page.locator('#reverseDisclosure summary').click();
+  const target = page.locator('#targetPriceInput');
+  assert.equal(await target.getAttribute('type'), 'text');
+  assert.equal(await target.getAttribute('inputmode'), 'numeric');
+  await target.fill('16.875');
+  assert.equal(await page.locator('#reverseMargin').textContent(), '20.0%');
+  assert.equal(await page.locator('#reverseProfitRmb').textContent(), '25.00');
+
+  await target.fill('abc');
+  assert.equal(await page.locator('#targetPriceError').textContent(), '请输入大于 0 的有效数字');
+  await context.close();
+});
+
 test('invalid values clear stale results and show field errors', async () => {
   const { context, page } = await openPage();
   assert.equal(await page.locator('#factoryPriceInput').count(), 1);
@@ -189,7 +210,7 @@ test('a manually entered rate is restored until the user clears it', async () =>
   await context.close();
 });
 
-test('the entire margin row copies its CLP price with honest feedback', async () => {
+test('the entire margin row copies its plain CLP number with honest feedback', async () => {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     serviceWorkers: 'block',
@@ -203,13 +224,14 @@ test('the entire margin row copies its CLP price with honest feedback', async ()
   await page.locator('#factoryPriceInput').fill('100');
   const firstAction = page.locator('.price-action').first();
   await firstAction.click();
-  await page.waitForFunction(() => document.querySelector('#copyStatus')?.textContent === '已复制 15.000 CLP');
+  await page.waitForFunction(() => document.querySelector('#copyStatus')?.textContent === '已复制 15000');
   assert.equal(await firstAction.getAttribute('data-copied'), 'true');
-  assert.equal(await page.locator('#copyStatus').textContent(), '已复制 15.000 CLP');
+  assert.equal(await page.locator('#copyStatus').textContent(), '已复制 15000');
+  assert.equal(await page.evaluate(() => navigator.clipboard.readText()), '15000');
 
   await firstAction.focus();
   await page.keyboard.press('Enter');
-  assert.equal(await page.locator('#copyStatus').textContent(), '已复制 15.000 CLP');
+  assert.equal(await page.locator('#copyStatus').textContent(), '已复制 15000');
 
   await page.evaluate(() => {
     Object.defineProperty(navigator, 'clipboard', {
@@ -316,10 +338,11 @@ test('PWA activates a local app-shell cache and reloads offline', async () => {
       }
       return { cacheNames, entries };
     });
-    assert.deepEqual(cacheState.cacheNames, ['price-tool-v5']);
-    assert.deepEqual(cacheState.entries['price-tool-v5'], [
+    assert.deepEqual(cacheState.cacheNames, ['price-tool-v6']);
+    assert.deepEqual(cacheState.entries['price-tool-v6'], [
       `${server.baseUrl}/`,
       `${server.baseUrl}/calculator.js`,
+      `${server.baseUrl}/icon-192.png`,
       `${server.baseUrl}/icon.png`,
       `${server.baseUrl}/index.html`,
       `${server.baseUrl}/manifest.json`,
@@ -330,7 +353,8 @@ test('PWA activates a local app-shell cache and reloads offline', async () => {
     const manifest = await page.evaluate(() => fetch('./manifest.json').then((response) => response.json()));
     assert.equal(manifest.theme_color.toLowerCase(), '#f2f2f7');
     assert.deepEqual(manifest.icons, [
-      { src: 'icon.png', sizes: '1024x1024', type: 'image/png' },
+      { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: 'icon.png', sizes: '512x512', type: 'image/png' },
     ]);
 
     await context.setOffline(true);
@@ -342,6 +366,31 @@ test('PWA activates a local app-shell cache and reloads offline', async () => {
   } finally {
     await context.close();
     await pwaBrowser.close();
+  }
+});
+
+test('the installed app opens from cache at once when the network hangs', async () => {
+  let stalled = false;
+  const slowServer = await startStaticServer({ shouldStall: () => stalled });
+  const pwaBrowser = await launchBrowser();
+  const context = await pwaBrowser.newContext({ serviceWorkers: 'allow' });
+  const page = await context.newPage();
+
+  try {
+    await page.goto(slowServer.baseUrl, { waitUntil: 'networkidle' });
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await page.reload({ waitUntil: 'networkidle' });
+
+    stalled = true;
+    await page.reload({ waitUntil: 'load', timeout: 3000 });
+    assert.equal(await page.locator('h1').textContent(), '定价');
+    await page.locator('#rateInput').fill('135');
+    await page.locator('#factoryPriceInput').fill('100');
+    assert.match(await page.locator('#priceList .price-row').nth(2).innerText(), /16\.880/);
+  } finally {
+    await context.close();
+    await pwaBrowser.close();
+    await slowServer.close();
   }
 });
 

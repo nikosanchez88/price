@@ -43,8 +43,14 @@ export async function launchBrowser() {
   });
 }
 
-export async function startStaticServer() {
+export async function startStaticServer({ shouldStall = () => false } = {}) {
+  const stalledResponses = new Set();
   const server = createServer(async (request, response) => {
+    if (shouldStall(request)) {
+      // Simulate a weak connection: accept the request but never answer it.
+      stalledResponses.add(response);
+      return;
+    }
     try {
       const requestUrl = new URL(request.url ?? '/', 'http://127.0.0.1');
       const pathname = decodeURIComponent(requestUrl.pathname);
@@ -77,7 +83,9 @@ export async function startStaticServer() {
   return {
     baseUrl: `http://127.0.0.1:${address.port}`,
     close: () => new Promise((resolve, reject) => {
+      for (const response of stalledResponses) response.destroy();
       server.close((error) => error ? reject(error) : resolve());
+      server.closeAllConnections();
     }),
   };
 }

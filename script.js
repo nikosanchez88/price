@@ -12,11 +12,19 @@ const fmtRmb = new Intl.NumberFormat('zh-CN', {
   maximumFractionDigits: 2,
 });
 
-export function parsePositiveInput(rawValue) {
+// CLP has no decimals, so "12.990" or "12,990" is a thousands-grouped 12990.
+const GROUPED_THOUSANDS = /^\d{1,3}([.,])\d{3}(?:\1\d{3})*$/;
+
+export function parsePositiveInput(rawValue, { clp = false } = {}) {
   if (typeof rawValue !== 'string' || rawValue.trim() === '') {
     return { state: 'empty' };
   }
-  const value = Number(rawValue.trim().replace(',', '.'));
+  let text = rawValue.trim();
+  if (clp) {
+    text = text.replace(/^\$\s*/, '').replace(/\s*clp$/i, '');
+    if (GROUPED_THOUSANDS.test(text)) text = text.replace(/[.,]/g, '');
+  }
+  const value = Number(text.replace(',', '.'));
   return Number.isFinite(value) && value > 0
     ? { state: 'valid', value }
     : { state: 'invalid' };
@@ -131,15 +139,16 @@ function initializeApp() {
 
   function appendMarginRow(label, values) {
     const button = document.createElement('button');
-    const copyText = `${fmtClp.format(values.clp)} CLP`;
+    const copyText = String(values.clp);
     button.type = 'button';
     button.className = 'price-row price-action';
     button.dataset.copied = 'false';
-    button.setAttribute(
-      'aria-label',
-      `${label}，${copyText}，${fmtRmb.format(values.rmb)} RMB，点击复制`,
-    );
     appendPriceText(button, label, values);
+    // The visible price is the accessible name; only the action hint is screen-reader-only.
+    const hint = document.createElement('span');
+    hint.className = 'sr-only';
+    hint.textContent = '，点击复制';
+    button.append(hint);
     button.append(createCopyIcon());
     button.addEventListener('click', () => copyPrice(button, copyText, elements.copyStatus));
     elements.priceList.append(button);
@@ -147,8 +156,10 @@ function initializeApp() {
 
   function render() {
     const rate = parsePositiveInput(elements.rate.value);
-    const factoryPrice = parsePositiveInput(elements.factoryPrice.value);
-    const targetPrice = parsePositiveInput(elements.targetPrice.value);
+    const factoryPrice = parsePositiveInput(elements.factoryPrice.value, {
+      clp: currentCurrency === 'CLP',
+    });
+    const targetPrice = parsePositiveInput(elements.targetPrice.value, { clp: true });
 
     showValidation(elements.rate, elements.rateError, rate);
     showValidation(elements.factoryPrice, elements.factoryPriceError, factoryPrice);

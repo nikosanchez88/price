@@ -21,6 +21,18 @@ test('input parsing distinguishes empty, invalid, and positive values', () => {
   assert.deepEqual(parsePositiveInput('12,5'), { state: 'valid', value: 12.5 });
 });
 
+test('CLP inputs read Chilean thousands separators and pasted price text', () => {
+  for (const raw of ['12.990', '12,990', '$12.990', '$ 12.990', '12.990 CLP', '12990']) {
+    assert.deepEqual(parsePositiveInput(raw, { clp: true }), { state: 'valid', value: 12990 });
+  }
+  assert.deepEqual(parsePositiveInput('1.234.567', { clp: true }), { state: 'valid', value: 1234567 });
+  assert.deepEqual(parsePositiveInput('12,5', { clp: true }), { state: 'valid', value: 12.5 });
+  assert.deepEqual(parsePositiveInput('1.234,567', { clp: true }), { state: 'invalid' });
+  assert.deepEqual(parsePositiveInput('$', { clp: true }), { state: 'invalid' });
+  // RMB prices and the exchange rate keep decimal points.
+  assert.deepEqual(parsePositiveInput('12.990'), { state: 'valid', value: 12.99 });
+});
+
 test('rate persistence stores valid values, ignores invalid values, and clears empty input', () => {
   const storage = createStorage();
   persistRate(storage, '135.5');

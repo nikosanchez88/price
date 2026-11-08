@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>跨境定价助手</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="style.css">
   <meta name="theme-color" content="#F2F2F7">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
 <body>
   <main class="app-shell">
@@ -83,10 +83,8 @@
           <label for="targetPriceInput">店铺售价 / 网点实收价（CLP）</label>
           <input
             id="targetPriceInput"
-            type="number"
-            inputmode="decimal"
-            min="0"
-            step="10"
+            type="text"
+            inputmode="numeric"
             placeholder="输入价格"
             aria-describedby="targetPriceError"
           >
